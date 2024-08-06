@@ -1,3 +1,6 @@
+/// const generics mean we can have the alpha and beta parameters of Jacobi polynomials at compile time
+/// but we have to restrict them to some natural number-ness instead of being continuous parameters
+/// but we only really ever really ever use them at certain half-integer values
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{

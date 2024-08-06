@@ -1,5 +1,7 @@
+/// TODO
 /// not packed tightly or guaranteeing sorting by degree
 /// only using for testing
+/// can get rid of it after have tests that don't need it anymore
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::ops::DivAssign;
 

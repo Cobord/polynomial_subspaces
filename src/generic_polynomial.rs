@@ -9,6 +9,12 @@ pub enum FindZeroError {
 pub type DegreeType = u8;
 pub type SmallIntegers = i8;
 
+// TODO
+// may make T Copy, but I like not having that at first
+// so I can make the arithmetic I am doing with it
+// not have to use those copies, having to put clone
+// provides the painfulness to make aware of that happening
+
 pub trait Generic1DPoly<T>:
     Sized
     + AddAssign<T>
