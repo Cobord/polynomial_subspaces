@@ -5,3 +5,15 @@ t^3 = 1*(0, 1,-1,-1) for t*t
  = (0,1,-1,-2,0,0) = 
 
 (1-t)^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + (1-t)
+
+differentiate_single(2)
+s_power = 1
+s_power_t = 1.0
+where_one_minus_t_s_k = 2
+after term 1
+answer.coeffs = 0,0,-1,-1,0,0
+shift_for_s_power_minus_1 = 0
+after term 2
+answer.coeffs = 0,1,0,0,0,0
+after term 3
+answer.coeffs = 0,1,-1,-1,0,0

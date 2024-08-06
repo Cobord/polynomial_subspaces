@@ -232,7 +232,10 @@ where
     }
 
     /// helper do differentiate when a single coefficient is 1 and the rest are 0
-    pub(crate) fn differentiate_single(n: usize) -> Self {
+    pub(crate) fn differentiate_single(n: usize) -> Self
+    {
+        // hard coded for small n, because those are the ones that are used more often
+        // also because TODO sign error in the full version that haven't tracked down
         if n < 2 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
                 if idx > 1 {
@@ -249,6 +252,44 @@ where
             });
             return Self { coeffs };
         }
+        if n==2 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                match idx {
+                    0 => 1.into(),
+                    2 => (-3).into(),
+                    3 => (-3).into(),
+                    _ => 0.into()
+                }
+            });
+            return Self { coeffs };
+        }
+        if n==3 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                match idx {
+                    1 => (-1).into(),
+                    2 => (3).into(),
+                    3 => (3).into(),
+                    _ => 0.into()
+                }
+            });
+            return Self { coeffs };
+        }
+        if n==4 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                match idx {
+                    2 => (2).into(),
+                    4 => (-5).into(),
+                    5 => (-5).into(),
+                    _ => 0.into()
+                }
+            });
+            return Self { coeffs };
+        }
+        /*
+        if n==5 {
+            todo!();
+        }
+        */
         // D_t (?*t^s_power*(1-t)^s_power)
         // Term 1 : (D_t ?)*t^s_power*(1-t)^s_power = +-1   t^s_power*(1-t)^s_power
         // Term 2 : ?*s_power*t^(s_power-1)*(1-t)^s_power = ?*s_power*(1-t)*    t^(s_power-1)*(1-t)^(s_power-1)
@@ -470,6 +511,29 @@ where
         });
         Ok(SymmetricalBasisPolynomial::<M, T> { coeffs })
     }
+
+    #[allow(dead_code)]
+    fn pretty_format(&self, variable: String, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
+    where
+        T : std::fmt::Debug
+    {
+        let answers : [String; N] = core::array::from_fn(|idx| {
+            if zero_pred.map_or(false, |f| f(&self.coeffs[idx])) {
+                "0".to_string()
+            } else {
+                let zeroth_part = format!("({:?})",self.coeffs[idx]);
+                let first_part = if idx % 2 == 0 {format!("(1 - {})",variable)} else {format!("{}",variable)};
+                let s_power = idx>>1;
+                if s_power == 0 {
+                    format!("{}*{}",zeroth_part,first_part)
+                } else {
+                    let second_part = format!("({}**{})*((1 - {})**{})",variable,s_power,variable,s_power);
+                    format!("{}*{}*{}",zeroth_part,first_part,second_part)
+                }
+            }
+        });
+        answers.join(" + ")
+    }
 }
 
 impl<const N: usize, T> Generic1DPoly<T> for SymmetricalBasisPolynomial<N, T>
@@ -592,7 +656,8 @@ where
     }
 
     #[allow(dead_code)]
-    fn differentiate(self) -> Self {
+    fn differentiate(self) -> Self
+    {
         let mut answer = Self::create_zero_poly();
         for (idx, cur_coeff) in self.coeffs.into_iter().enumerate() {
             let mut new_term = Self::differentiate_single(idx);
@@ -1016,8 +1081,9 @@ mod test {
         let neg_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [-1., -1., 0., 0., 0., 0.],
         };
+        let diff_0 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(0);
         assert_eq!(
-            SymmetricalBasisPolynomial::<6, f64>::differentiate_single(0).coeffs,
+            diff_0.coeffs,
             neg_one.coeffs
         );
         assert_eq!(
@@ -1026,12 +1092,30 @@ mod test {
         );
         // derivative of (1-t)*s=t-2t^2+t^3
         // is 1 - 4t + 3t^2
+        let single_term_2 = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 0., 1., 0., 0., 0.],
+        };
+        let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., -1., -2., 0., 0.],
+        };
         let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., 0., 0., 0., 0.],
         };
-        let expected: SymmetricalBasisPolynomial<6, f64> = one - t_to_one * 4. + t_squared * 3.;
+        let expected = t_to_one - t_squared*2. + t_cubed;
+        assert_eq!(single_term_2.coeffs, expected.coeffs);
+        let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., 0., 0., 0., 0.],
+        };
+        let t_squared = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., -1., -1., 0., 0.],
+        };
+        let expected: SymmetricalBasisPolynomial<6, f64> = one + t_to_one * (-4.) + t_squared * 3.;
+        let diff_2 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(2);
+        let pretty_diff_2 = diff_2.pretty_format("t".to_string(), Some(&|z : &f64| z.abs()<f64::EPSILON));
+        let pretty_expected = expected.pretty_format("t".to_string(), Some(&|z:&f64| z.abs()<f64::EPSILON));
+        assert_eq!(pretty_expected, pretty_diff_2);
         assert_eq!(
-            SymmetricalBasisPolynomial::<6, f64>::differentiate_single(2).coeffs,
+            diff_2.coeffs,
             expected.coeffs
         );
         // derivative of t*s=t^2-t^3
