@@ -285,11 +285,18 @@ where
             });
             return Self { coeffs };
         }
-        /*
         if n==5 {
-            todo!();
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                match idx {
+                    2 => (-8).into(),
+                    3 => (-18).into(),
+                    4 => 5.into(),
+                    5 => 5.into(),
+                    _ => 0.into()
+                }
+            });
+            return Self { coeffs };
         }
-        */
         // D_t (?*t^s_power*(1-t)^s_power)
         // Term 1 : (D_t ?)*t^s_power*(1-t)^s_power = +-1   t^s_power*(1-t)^s_power
         // Term 2 : ?*s_power*t^(s_power-1)*(1-t)^s_power = ?*s_power*(1-t)*    t^(s_power-1)*(1-t)^(s_power-1)
@@ -1152,6 +1159,26 @@ mod test {
             t_to_one * 2. - t_squared * 9. + t_cubed * 12. - t_fourth * 5.;
         assert_eq!(
             SymmetricalBasisPolynomial::<6, f64>::differentiate_single(4).coeffs,
+            expected.coeffs
+        );
+        // derivative of t*s*2=t^3*(1-2t+t^2)=t^3-2*t^4+t^5
+        // 3t^2 -8t + 5t^4
+        let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., 0., 0., 0., 0.],
+        };
+        let t_squared = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., -1., -1., 0., 0.],
+        };
+        let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., -1., -2., 0., 0.],
+        };
+        let t_fourth = t_cubed
+            .multiply_by_t(true, &|z| z.abs() < 0.000001)
+            .unwrap();
+        let expected: SymmetricalBasisPolynomial<6, f64> =
+            t_fourth*5. - t_to_one*8. + t_squared*3.;
+        assert_eq!(
+            SymmetricalBasisPolynomial::<6, f64>::differentiate_single(5).coeffs,
             expected.coeffs
         );
     }
