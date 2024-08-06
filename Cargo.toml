@@ -1,0 +1,8 @@
+[package]
+name = "bezier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bezier-rs = "0.4.0"
+glam = "0.28.0"
