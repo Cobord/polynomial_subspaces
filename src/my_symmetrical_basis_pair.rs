@@ -739,7 +739,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
-        my_cube_root: &impl Fn(&T) -> T,
+        my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
     ) -> Result<Vec<(T, usize)>, FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
         match degree {

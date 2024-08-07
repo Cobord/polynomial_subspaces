@@ -133,12 +133,21 @@ where
         + Sub<Output = T>
         + DivAssign<T>,
 {
+    /// if the degree is small enough
+    /// or some other characterization that means
+    /// an exact solution could be done in radicals
+    /// by Galois considerations
+    /// then give those solutions that are within T without needing an extension
+    /// zero_pred is there to determine if a T is 0 or not
+    /// my_sqrt gives the square root if it existed within T without needing an extension
+    /// my_cube_root gives a cube root if it existed within T without needing an extension
+    ///     and if applicable a cube root of unity
     #[allow(dead_code)]
     fn find_zeros(
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
-        my_cube_root: &impl Fn(&T) -> T,
+        my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
     ) -> Result<Vec<(T, usize)>, FindZeroError>;
 }
 
@@ -190,7 +199,7 @@ pub(crate) fn cubic_solve<T>(
     _cubic_coeff: T,
     _zero_pred: &impl Fn(&T) -> bool,
     _my_sqrt: &impl Fn(&T) -> Option<T>,
-    _my_cube_root: &impl Fn(&T) -> T,
+    _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
 ) -> Result<Vec<(T, usize)>, FindZeroError>
 where
     T: Clone
@@ -214,7 +223,7 @@ pub(crate) fn quartic_solve<T>(
     _quartic_coeff: T,
     _zero_pred: &impl Fn(&T) -> bool,
     _my_sqrt: &impl Fn(&T) -> Option<T>,
-    _my_cube_root: &impl Fn(&T) -> T,
+    _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
 ) -> Result<Vec<(T, usize)>, FindZeroError>
 where
     T: Clone

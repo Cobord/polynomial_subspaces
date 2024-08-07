@@ -178,7 +178,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         _my_sqrt: &impl Fn(&T) -> Option<T>,
-        _my_cube_root: &impl Fn(&T) -> T,
+        _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
     ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
         match degree {
