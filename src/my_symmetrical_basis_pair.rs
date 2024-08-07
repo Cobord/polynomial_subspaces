@@ -697,14 +697,14 @@ where
     }
 
     #[allow(dead_code)]
-    fn differentiate(self) -> Self {
+    fn differentiate(self) -> Option<Self> {
         let mut answer = Self::create_zero_poly();
         for (idx, cur_coeff) in self.coeffs.into_iter().enumerate() {
             let mut new_term = Self::differentiate_single(idx);
             new_term *= cur_coeff;
             answer += new_term;
         }
-        answer
+        Some(answer)
     }
 
     fn truncating_product(
@@ -1138,7 +1138,7 @@ mod test {
         let t_squared = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., -1., -1., 0., 0.],
         };
-        assert_eq!(t_to_one.differentiate().coeffs, one.coeffs);
+        assert_eq!(t_to_one.differentiate().expect("this can be differentiated without issue").coeffs, one.coeffs);
         let neg_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [-1., -1., 0., 0., 0., 0.],
         };

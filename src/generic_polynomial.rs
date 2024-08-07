@@ -23,6 +23,16 @@ pub enum PointSpecifier<T> {
     General(T),
 }
 
+/// a subspace of the vector space T[x] where T is some ring
+/// the subspace does not have to be closed under derivative
+/// the common way this subspace is chosen is if we have some
+/// natural number indexed basis and we demand to only take the
+/// first N of these basis vectors
+/// that is the case with SymmetricalBasisPolynomial<N>
+/// where the basis is (1-x),x,(1-x)*x,x*s,... with s=x*(1-x)
+/// that is also the case with JacobiBasisPolynomial<N,TWICE_ALPHA_PLUS_OFFSET,TWICE_BETA_PLUS_OFFSET>
+/// where the basis is P^{alpha,beta}_n
+/// similarly for the specializations of alpha and beta to get the other special polynomials
 pub trait Generic1DPoly<T>:
     Sized
     + AddAssign<T>
@@ -65,7 +75,7 @@ where
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType>;
     #[allow(dead_code)]
-    fn differentiate(self) -> Self;
+    fn differentiate(self) -> Option<Self>;
     /// take the product of these two polynomials
     /// the type of Self constrains the allowed terms
     /// if sure_will_cancel then even if we seem to be breaking those constraints
@@ -88,21 +98,21 @@ where
     }
 
     /// first order approximation around the given point
-    fn linear_approx(self, around_here: PointSpecifier<T>) -> (T, T) {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> Option<(T, T)> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
             PointSpecifier::One => self.evaluate_at_one(),
             PointSpecifier::General(t) => self.evaluate_at(t.clone()),
         };
-        let derivative = self.differentiate();
+        let derivative = self.differentiate()?;
         let linear_term = derivative.evaluate_at_specifier(around_here);
-        (constant_term, linear_term)
+        Some((constant_term, linear_term))
     }
 
     #[allow(dead_code)]
     fn linear_approx_poly(self, around_here: PointSpecifier<T>) -> Option<Self> {
-        let (constant_term, linear_term) = self.linear_approx(around_here);
+        let (constant_term, linear_term) = self.linear_approx(around_here)?;
         let mut answer = Self::create_zero_poly();
         answer += constant_term;
         let mut linear_poly = Self::create_monomial(1, &|_| false, false)?;

@@ -141,7 +141,7 @@ where
             .max()
     }
 
-    fn differentiate(self) -> Self {
+    fn differentiate(self) -> Option<Self> {
         todo!()
     }
 

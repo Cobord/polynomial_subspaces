@@ -152,7 +152,7 @@ where
             .max()
     }
 
-    fn differentiate(mut self) -> Self {
+    fn differentiate(mut self) -> Option<Self> {
         let mut drop_idcs = vec![];
         self.coeffs
             .iter_mut()
@@ -171,7 +171,7 @@ where
         for to_drop in drop_idcs {
             self.coeffs.remove(to_drop);
         }
-        self
+        Some(self)
     }
 
     fn truncating_product(
@@ -204,7 +204,7 @@ where
         Some(Self { coeffs: answer })
     }
 
-    fn linear_approx(self, around_here: PointSpecifier<T>) -> (T, T) {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> Option<(T, T)> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -213,7 +213,7 @@ where
         };
         let linear_term = match around_here {
             PointSpecifier::NegOne => {
-                let derivative = self.differentiate();
+                let derivative = self.differentiate()?;
                 derivative.evaluate_at_neg_one()
             }
             PointSpecifier::Zero => {
@@ -222,15 +222,15 @@ where
                 self.extract_coeff(1)
             }
             PointSpecifier::One => {
-                let derivative = self.differentiate();
+                let derivative = self.differentiate()?;
                 derivative.evaluate_at_one()
             }
             PointSpecifier::General(t) => {
-                let derivative = self.differentiate();
+                let derivative = self.differentiate()?;
                 derivative.evaluate_at(t)
             }
         };
-        (constant_term, linear_term)
+        Some((constant_term, linear_term))
     }
 }
 
