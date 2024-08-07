@@ -231,9 +231,7 @@ where
         true
     }
 
-    /// helper do differentiate when a single coefficient is 1 and the rest are 0
-    pub(crate) fn differentiate_single(n: usize) -> Self
-    {
+    fn differentiate_single_hardcoded(n: usize) -> Option<Self> {
         // hard coded for small n, because those are the ones that are used more often
         // also because TODO sign error in the full version that haven't tracked down
         if n < 2 {
@@ -250,7 +248,7 @@ where
                     }
                 }
             });
-            return Self { coeffs };
+            return Some(Self { coeffs });
         }
         if n==2 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
@@ -261,7 +259,7 @@ where
                     _ => 0.into()
                 }
             });
-            return Self { coeffs };
+            return Some(Self { coeffs });
         }
         if n==3 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
@@ -272,7 +270,7 @@ where
                     _ => 0.into()
                 }
             });
-            return Self { coeffs };
+            return Some(Self { coeffs });
         }
         if n==4 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
@@ -283,7 +281,7 @@ where
                     _ => 0.into()
                 }
             });
-            return Self { coeffs };
+            return Some(Self { coeffs });
         }
         if n==5 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
@@ -295,7 +293,17 @@ where
                     _ => 0.into()
                 }
             });
-            return Self { coeffs };
+            return Some(Self { coeffs });
+        }
+        return None;
+    }
+
+    /// helper do differentiate when a single coefficient is 1 and the rest are 0
+    pub(crate) fn differentiate_single(n: usize) -> Self
+    {
+        let hard_coded = Self::differentiate_single_hardcoded(n);
+        if let Some(got_hard_coded) = hard_coded {
+            return got_hard_coded;
         }
         // D_t (?*t^s_power*(1-t)^s_power)
         // Term 1 : (D_t ?)*t^s_power*(1-t)^s_power = +-1   t^s_power*(1-t)^s_power
@@ -316,8 +324,8 @@ where
         }
         // Term 2 ?*s_power*(1-t)*    t^(s_power-1)*(1-t)^(s_power-1)
         let shift_for_s_power_minus_1 = (s_power - 1) << 1;
-        let without_s = if n % 2 == 0 { 0 } else { 1 };
-        match Self::product_goes(without_s, 0) {
+        let without_s_n_even = n % 2 == 0;
+        match Self::product_goes_01(without_s_n_even, true) {
             Ok(x) => {
                 let which_coeff_x = x + (shift_for_s_power_minus_1);
                 answer.coeffs[which_coeff_x] += s_power_t.clone();
@@ -332,7 +340,7 @@ where
             }
         }
         // Term 3 -?*s_power*t*   t^(s_power-1)*(1-t)^(s_power-1)
-        match Self::product_goes(without_s, 1) {
+        match Self::product_goes_01(without_s_n_even, false) {
             Ok(x) => {
                 let which_coeff_x = x + shift_for_s_power_minus_1;
                 answer.coeffs[which_coeff_x] -= s_power_t.clone();
@@ -349,37 +357,58 @@ where
         answer
     }
 
+    const fn product_goes_01(idx_is_zero: bool, jdx_is_zero : bool) -> Result<usize, (usize, usize)> {
+        match (idx_is_zero,jdx_is_zero) {
+            (true, true) => {
+                // (1-t)^2
+                // 1-t,t,(1-t)*t*(1-t),t*t*(1-t)
+                // (1-t)^2 = (1-t) - (1-t)*t
+                // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
+                // (1-t)^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + (1-t)
+                Err((0,2))
+            },
+            (true, false) => {
+                // (1-t)*t
+                Ok(2)
+            }
+            (false, true) => {
+                // t*(1-t)
+                Ok(2)
+            }
+            (false, false) => {
+                // t^2
+                // 1-t,t,(1-t)*t*(1-t),t*t*(1-t)
+                // t^2 = -1*(1-t)*t+t
+                // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
+                // t^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + t
+                Err((1,2))
+            }
+        }
+    }
+
     /// when multiplying the term associated with self.coeffs[idx] and self.coeffs[jdx]
     /// the possibilities are either 2 terms in the result or 3 terms
     /// in the Ok case we have two terms both coming with + signs Ok(x) meaning x and x+1
     /// in the Err case we have three terms with the first with a + sign and the other two with - signs
     /// Err((x,y)) meaning x comes with + and y and y+1 come with - sign
-    fn product_goes(idx: usize, jdx: usize) -> Result<usize, (usize, usize)> {
+    const fn product_goes(idx: usize, jdx: usize) -> Result<usize, (usize, usize)> {
         let power_of_s_idx = idx >> 1;
         let power_of_s_jdx = jdx >> 1;
-        if idx % 2 != jdx % 2 {
-            let products_power_of_s = power_of_s_idx + power_of_s_jdx + 1;
-            let answer = products_power_of_s << 1;
-            Ok(answer)
-        } else {
-            let products_power_of_s = power_of_s_idx + power_of_s_jdx;
-            let extra_t2 = idx % 2 == 1;
-            let mut answer = if extra_t2 {
-                // 1-t,t,(1-t)*t*(1-t),t*t*(1-t)
-                // t^2 = -1*(1-t)*t+t
-                // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
-                // t^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + t
-                (1, 2)
-            } else {
-                // 1-t,t,(1-t)*t*(1-t),t*t*(1-t)
-                // (1-t)^2 = (1-t) - (1-t)*t
-                // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
-                // (1-t)^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + (1-t)
-                (0, 2)
-            };
-            answer.0 += products_power_of_s << 1;
-            answer.1 += products_power_of_s << 1;
-            Err(answer)
+        let answer = Self::product_goes_01(idx % 2 == 0, jdx % 2 == 0);
+        let products_power_of_s = power_of_s_idx + power_of_s_jdx;
+        if products_power_of_s == 0 {
+            return answer;
+        }
+        match answer {
+            Ok(mut idx) => {
+                idx += (products_power_of_s)<<1;
+                Ok(idx)
+            }
+            Err((mut x,mut y)) => {
+                x += products_power_of_s << 1;
+                y += products_power_of_s << 1;
+                Err((x,y))
+            }
         }
     }
 
