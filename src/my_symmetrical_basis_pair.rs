@@ -295,7 +295,7 @@ where
             });
             return Some(Self { coeffs });
         }
-        return None;
+        None
     }
 
     /// helper do differentiate when a single coefficient is 1 and the rest are 0
@@ -558,7 +558,7 @@ where
                 "0".to_string()
             } else {
                 let zeroth_part = format!("({:?})",self.coeffs[idx]);
-                let first_part = if idx % 2 == 0 {format!("(1 - {})",variable)} else {format!("{}",variable)};
+                let first_part = if idx % 2 == 0 {format!("(1 - {})",variable)} else {variable.to_string()};
                 let s_power = idx>>1;
                 if s_power == 0 {
                     format!("{}*{}",zeroth_part,first_part)
@@ -656,8 +656,12 @@ where
 
     #[allow(dead_code)]
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
-        let linear_coeff = self.coeffs[1].clone() - self.coeffs[0].clone();
-        if !zero_pred(&linear_coeff) {
+        let linear_coeff_truncated = if N == 1 {
+            -self.coeffs[0].clone()
+        } else {
+            self.coeffs[1].clone() - self.coeffs[0].clone()
+        };
+        if !zero_pred(&linear_coeff_truncated) {
             return false;
         }
         self.coeffs[1..].iter().all(zero_pred)
@@ -711,6 +715,7 @@ where
     ) -> Option<Self> {
         self.try_product(rhs, zero_pred, sure_will_cancel)
     }
+
 }
 
 impl<const N: usize, T> FundamentalTheorem<T> for SymmetricalBasisPolynomial<N, T>

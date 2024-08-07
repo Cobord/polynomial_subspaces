@@ -15,14 +15,24 @@ pub type SmallIntegers = i8;
 // not have to use those copies, having to put clone
 // provides the painfulness to make aware of that happening
 
+#[allow(dead_code)]
+pub enum PointSpecifier<T> {
+    NegOne,
+    Zero,
+    One,
+    General(T)
+}
+
 pub trait Generic1DPoly<T>:
     Sized
     + AddAssign<T>
     + Add<T, Output = Self>
-    + Add<Output = Self>
+    + Add<Self,Output = Self>
+    + AddAssign<Self>
     + SubAssign<T>
     + Sub<T, Output = Self>
-    + Sub<Output = Self>
+    + Sub<Self,Output = Self>
+    + SubAssign<Self>
     + MulAssign<T>
     + Mul<T, Output = Self>
 where
@@ -66,6 +76,39 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         sure_will_cancel: bool,
     ) -> Option<Self>;
+    
+    fn evaluate_at_specifier(&self, around_here : PointSpecifier<T>) -> T {
+        match around_here {
+            PointSpecifier::NegOne => self.evaluate_at_neg_one(),
+            PointSpecifier::Zero => self.evaluate_at_zero(),
+            PointSpecifier::One => self.evaluate_at_one(),
+            PointSpecifier::General(t) => self.evaluate_at(t),
+        }
+    }
+
+    /// first order approximation around the given point
+    fn linear_approx(self, around_here : PointSpecifier<T>) -> (T,T) {
+        let constant_term = match &around_here {
+            PointSpecifier::NegOne => self.evaluate_at_neg_one(),
+            PointSpecifier::Zero => self.evaluate_at_zero(),
+            PointSpecifier::One => self.evaluate_at_one(),
+            PointSpecifier::General(t) => self.evaluate_at(t.clone()),
+        };
+        let derivative = self.differentiate();
+        let linear_term = derivative.evaluate_at_specifier(around_here);
+        (constant_term,linear_term)
+    }
+
+    #[allow(dead_code)]
+    fn linear_approx_poly(self, around_here: PointSpecifier<T>) -> Option<Self> {
+        let (constant_term,linear_term) = self.linear_approx(around_here);
+        let mut answer = Self::create_zero_poly();
+        answer += constant_term;
+        let mut linear_poly = Self::create_monomial(1, &|_| false, false)?;
+        linear_poly *= linear_term;
+        Some(answer + linear_poly)
+    }
+    
 }
 pub trait FundamentalTheorem<T>: Generic1DPoly<T>
 where

@@ -6,8 +6,7 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::ops::DivAssign;
 
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem,
-    Generic1DPoly, SmallIntegers,
+    cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem, Generic1DPoly, PointSpecifier, SmallIntegers
 };
 pub struct MonomialBasisPolynomial<T>
 where
@@ -22,6 +21,33 @@ where
         + SubAssign<T>,
 {
     pub(crate) coeffs: Vec<(DegreeType, T)>,
+}
+
+impl<T> MonomialBasisPolynomial<T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>,
+{
+    fn extract_coeff(&self,which : DegreeType) -> T
+    {
+        self.coeffs
+            .iter()
+            .filter_map(|(power, coeff)| {
+                if *power == which {
+                    Some(coeff.clone())
+                } else {
+                    None
+                }
+            })
+            .fold(Into::<T>::into(0), |acc, next| acc + next)
+    }
 }
 
 impl<T> Generic1DPoly<T> for MonomialBasisPolynomial<T>
@@ -177,6 +203,35 @@ where
         }
         Some(Self { coeffs: answer })
     }
+
+    fn linear_approx(self, around_here : PointSpecifier<T>) -> (T,T) {
+        let constant_term = match &around_here {
+            PointSpecifier::NegOne => self.evaluate_at_neg_one(),
+            PointSpecifier::Zero => self.evaluate_at_zero(),
+            PointSpecifier::One => self.evaluate_at_one(),
+            PointSpecifier::General(t) => self.evaluate_at(t.clone()),
+        };
+        let linear_term = match around_here {
+            PointSpecifier::NegOne => {
+                let derivative = self.differentiate();
+                derivative.evaluate_at_neg_one()
+            },
+            PointSpecifier::Zero => {
+                // overrides the default implementation because this way when asking
+                // for linear approximation at 0, don't have to differentiate
+                self.extract_coeff(1)
+            },
+            PointSpecifier::One => {
+                let derivative = self.differentiate();
+                derivative.evaluate_at_one()
+            },
+            PointSpecifier::General(t) => {
+                let derivative = self.differentiate();
+                derivative.evaluate_at(t)
+            },
+        };
+        (constant_term,linear_term)
+    }
 }
 
 impl<T> FundamentalTheorem<T> for MonomialBasisPolynomial<T>
@@ -199,31 +254,20 @@ where
         my_cube_root: &impl Fn(&T) -> T,
     ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
-        let extract_coeff = |which: DegreeType| {
-            self.coeffs
-                .iter()
-                .filter_map(|(power, coeff)| {
-                    if *power == which {
-                        Some(coeff.clone())
-                    } else {
-                        None
-                    }
-                })
-                .fold(Into::<T>::into(0), |acc, next| acc + next)
-        };
+        
         match degree {
             Some(0) => Ok(vec![]),
             Some(1) => {
                 let constant_term = self.evaluate_at_zero();
-                let linear_term: T = extract_coeff(1);
+                let linear_term: T = self.extract_coeff(1);
                 let mut only_zero = -constant_term;
                 only_zero /= linear_term;
                 Ok(vec![(only_zero, 0)])
             }
             Some(2) => {
                 let constant_term = self.evaluate_at_zero();
-                let linear_coeff: T = extract_coeff(1);
-                let quadratic_coeff: T = extract_coeff(2);
+                let linear_coeff: T = self.extract_coeff(1);
+                let quadratic_coeff: T = self.extract_coeff(2);
                 quadratic_solve(
                     constant_term,
                     linear_coeff,
@@ -234,9 +278,9 @@ where
             }
             Some(3) => {
                 let constant_term = self.evaluate_at_zero();
-                let linear_coeff: T = extract_coeff(1);
-                let quadratic_coeff: T = extract_coeff(2);
-                let cubic_coeff: T = extract_coeff(3);
+                let linear_coeff: T = self.extract_coeff(1);
+                let quadratic_coeff: T = self.extract_coeff(2);
+                let cubic_coeff: T = self.extract_coeff(3);
                 cubic_solve(
                     constant_term,
                     linear_coeff,
@@ -249,10 +293,10 @@ where
             }
             Some(4) => {
                 let constant_term = self.evaluate_at_zero();
-                let linear_coeff: T = extract_coeff(1);
-                let quadratic_coeff: T = extract_coeff(2);
-                let cubic_coeff: T = extract_coeff(3);
-                let quartic_coeff: T = extract_coeff(3);
+                let linear_coeff: T = self.extract_coeff(1);
+                let quadratic_coeff: T = self.extract_coeff(2);
+                let cubic_coeff: T = self.extract_coeff(3);
+                let quartic_coeff: T = self.extract_coeff(4);
                 quartic_solve(
                     constant_term,
                     linear_coeff,
