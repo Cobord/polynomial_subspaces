@@ -1,13 +1,27 @@
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::ops::DivAssign;
 
-pub enum FindZeroError {
-    EverythingIsAZeroForZeroPolynomial,
-    AbelRuffiniUnsolvability,
-}
-
 pub type DegreeType = u8;
 pub type SmallIntegers = i8;
+
+pub enum FindZeroError {
+    EverythingIsAZeroForZeroPolynomial,
+    #[allow(dead_code)]
+    AbelRuffiniUnsolvability(DegreeType),
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub enum DifferentiateError {
+    NotInTheSpace,
+    CantComputeDerivative,
+}
+
+#[derive(Debug)]
+pub enum MonomialError {
+    #[allow(dead_code)]
+    DesiredMonomialNotInSpace(DegreeType),
+}
 
 // TODO
 // may make T Copy, but I like not having that at first
@@ -61,7 +75,7 @@ where
         degree: DegreeType,
         zero_pred: &impl Fn(&T) -> bool,
         surely_fits: bool,
-    ) -> Option<Self>;
+    ) -> Result<Self, MonomialError>;
     #[allow(dead_code)]
     fn evaluate_at(&self, t: T) -> T;
     fn evaluate_at_zero(&self) -> T;
@@ -75,7 +89,7 @@ where
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType>;
     #[allow(dead_code)]
-    fn differentiate(self) -> Option<Self>;
+    fn differentiate(self) -> Result<Self, DifferentiateError>;
     /// take the product of these two polynomials
     /// the type of Self constrains the allowed terms
     /// if sure_will_cancel then even if we seem to be breaking those constraints
@@ -98,7 +112,7 @@ where
     }
 
     /// first order approximation around the given point
-    fn linear_approx(self, around_here: PointSpecifier<T>) -> Option<(T, T)> {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> Result<(T, T), DifferentiateError> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -107,17 +121,20 @@ where
         };
         let derivative = self.differentiate()?;
         let linear_term = derivative.evaluate_at_specifier(around_here);
-        Some((constant_term, linear_term))
+        Ok((constant_term, linear_term))
     }
 
     #[allow(dead_code)]
-    fn linear_approx_poly(self, around_here: PointSpecifier<T>) -> Option<Self> {
-        let (constant_term, linear_term) = self.linear_approx(around_here)?;
+    fn linear_approx_poly(
+        self,
+        around_here: PointSpecifier<T>,
+    ) -> Result<Self, Result<DifferentiateError, MonomialError>> {
+        let (constant_term, linear_term) = self.linear_approx(around_here).map_err(Ok)?;
         let mut answer = Self::create_zero_poly();
         answer += constant_term;
-        let mut linear_poly = Self::create_monomial(1, &|_| false, false)?;
+        let mut linear_poly = Self::create_monomial(1, &|_| false, false).map_err(Err)?;
         linear_poly *= linear_term;
-        Some(answer + linear_poly)
+        Ok(answer + linear_poly)
     }
 }
 
@@ -147,7 +164,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
-        my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+        my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
     ) -> Result<Vec<(T, usize)>, FindZeroError>;
 }
 
@@ -199,7 +216,7 @@ pub(crate) fn cubic_solve<T>(
     _cubic_coeff: T,
     _zero_pred: &impl Fn(&T) -> bool,
     _my_sqrt: &impl Fn(&T) -> Option<T>,
-    _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+    _my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
 ) -> Result<Vec<(T, usize)>, FindZeroError>
 where
     T: Clone
@@ -223,7 +240,7 @@ pub(crate) fn quartic_solve<T>(
     _quartic_coeff: T,
     _zero_pred: &impl Fn(&T) -> bool,
     _my_sqrt: &impl Fn(&T) -> Option<T>,
-    _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+    _my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
 ) -> Result<Vec<(T, usize)>, FindZeroError>
 where
     T: Clone

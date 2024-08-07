@@ -6,8 +6,8 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::ops::DivAssign;
 
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem,
-    Generic1DPoly, PointSpecifier, SmallIntegers,
+    cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
+    FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
 };
 pub struct MonomialBasisPolynomial<T>
 where
@@ -70,8 +70,8 @@ where
         degree: DegreeType,
         _zero_pred: &impl Fn(&T) -> bool,
         _surely_fits: bool,
-    ) -> Option<Self> {
-        Some(Self {
+    ) -> Result<Self, MonomialError> {
+        Ok(Self {
             coeffs: vec![(degree, 1.into())],
         })
     }
@@ -152,7 +152,7 @@ where
             .max()
     }
 
-    fn differentiate(mut self) -> Option<Self> {
+    fn differentiate(mut self) -> Result<Self, DifferentiateError> {
         let mut drop_idcs = vec![];
         self.coeffs
             .iter_mut()
@@ -171,7 +171,7 @@ where
         for to_drop in drop_idcs {
             self.coeffs.remove(to_drop);
         }
-        Some(self)
+        Ok(self)
     }
 
     fn truncating_product(
@@ -204,7 +204,7 @@ where
         Some(Self { coeffs: answer })
     }
 
-    fn linear_approx(self, around_here: PointSpecifier<T>) -> Option<(T, T)> {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> Result<(T, T), DifferentiateError> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -230,7 +230,7 @@ where
                 derivative.evaluate_at(t)
             }
         };
-        Some((constant_term, linear_term))
+        Ok((constant_term, linear_term))
     }
 }
 
@@ -251,7 +251,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
-        my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+        my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
     ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
 
@@ -308,7 +308,7 @@ where
                     my_cube_root,
                 )
             }
-            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability),
+            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability(x)),
             None => Err(FindZeroError::EverythingIsAZeroForZeroPolynomial),
             _ => {
                 unreachable!("x>4 exhausted all the other Some cases")

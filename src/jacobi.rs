@@ -4,7 +4,8 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{
-    DegreeType, FindZeroError, FundamentalTheorem, Generic1DPoly, SmallIntegers,
+    DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly,
+    MonomialError, SmallIntegers,
 };
 
 #[allow(dead_code)]
@@ -73,7 +74,7 @@ where
         _degree: DegreeType,
         _zero_pred: &impl Fn(&T) -> bool,
         _surely_fits: bool,
-    ) -> Option<Self> {
+    ) -> Result<Self, MonomialError> {
         todo!();
     }
 
@@ -141,7 +142,7 @@ where
             .max()
     }
 
-    fn differentiate(self) -> Option<Self> {
+    fn differentiate(self) -> Result<Self, DifferentiateError> {
         todo!()
     }
 
@@ -178,7 +179,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         _my_sqrt: &impl Fn(&T) -> Option<T>,
-        _my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+        _my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
     ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
         match degree {
@@ -195,7 +196,7 @@ where
             Some(4) => {
                 todo!()
             }
-            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability),
+            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability(x)),
             None => Err(FindZeroError::EverythingIsAZeroForZeroPolynomial),
             _ => {
                 unreachable!("x>4 exhausted all the other Some cases")

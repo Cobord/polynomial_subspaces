@@ -5,8 +5,8 @@ use bezier_rs::Bezier;
 
 use crate::{
     generic_polynomial::{
-        cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem,
-        Generic1DPoly, SmallIntegers,
+        cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
+        FundamentalTheorem, Generic1DPoly, MonomialError, SmallIntegers,
     },
     ordinary_polynomial::MonomialBasisPolynomial,
 };
@@ -594,24 +594,32 @@ where
         n: DegreeType,
         zero_pred: &impl Fn(&T) -> bool,
         surely_fits: bool,
-    ) -> Option<Self> {
+    ) -> Result<Self, MonomialError> {
         if n == 0 {
+            if N < 2 {
+                return Err(MonomialError::DesiredMonomialNotInSpace(0));
+            }
             let coeffs: [T; N] =
                 core::array::from_fn(|idx| if idx > 1 { 0.into() } else { 1.into() });
-            return Some(Self { coeffs });
+            return Ok(Self { coeffs });
         }
         if n == 1 {
+            if N < 2 {
+                return Err(MonomialError::DesiredMonomialNotInSpace(1));
+            }
             let coeffs: [T; N] =
                 core::array::from_fn(|idx| if idx == 1 { 1.into() } else { 0.into() });
-            return Some(Self { coeffs });
+            return Ok(Self { coeffs });
         }
-        let mut answer = Self::create_monomial(1, zero_pred, true).unwrap();
-        for _cur_power in 1..n {
+        let mut answer = Self::create_monomial(1, zero_pred, true)?;
+        for cur_power in 1..n {
             // answer is t^cur_power
-            answer = answer.multiply_by_t(surely_fits, zero_pred)?;
+            answer = answer
+                .multiply_by_t(surely_fits, zero_pred)
+                .ok_or(MonomialError::DesiredMonomialNotInSpace(cur_power + 1))?;
             // answer is t^(cur_power+1)
         }
-        Some(answer)
+        Ok(answer)
     }
 
     fn evaluate_at(&self, t: T) -> T {
@@ -697,14 +705,17 @@ where
     }
 
     #[allow(dead_code)]
-    fn differentiate(self) -> Option<Self> {
+    fn differentiate(self) -> Result<Self, DifferentiateError> {
+        if N % 2 == 1 {
+            // TODO might not be closed under differentiation
+        }
         let mut answer = Self::create_zero_poly();
         for (idx, cur_coeff) in self.coeffs.into_iter().enumerate() {
             let mut new_term = Self::differentiate_single(idx);
             new_term *= cur_coeff;
             answer += new_term;
         }
-        Some(answer)
+        Ok(answer)
     }
 
     fn truncating_product(
@@ -739,7 +750,7 @@ where
         &self,
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
-        my_cube_root: &impl Fn(&T) -> (Option<T>,Option<T>),
+        my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
     ) -> Result<Vec<(T, usize)>, FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
         match degree {
@@ -835,7 +846,7 @@ where
                     my_cube_root,
                 )
             }
-            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability),
+            Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability(x)),
             None => Err(FindZeroError::EverythingIsAZeroForZeroPolynomial),
             _ => {
                 unreachable!("x>4 exhausted all the other Some cases")
@@ -1065,15 +1076,18 @@ where
         + Sub<Output = T>
         + SubAssign<T>,
 {
-    type Error = ();
+    type Error = MonomialError;
 
     fn try_from(value: MonomialBasisPolynomial<T>) -> Result<Self, Self::Error> {
         let mut answer = Self::create_zero_poly();
         for term in value.coeffs {
-            if let Some(monomial_symmetrized) = Self::create_monomial(term.0, &|_| false, false) {
-                answer += monomial_symmetrized * term.1;
-            } else {
-                return Err(());
+            match Self::create_monomial(term.0, &|_| false, false) {
+                Ok(monomial_symmetrized) => {
+                    answer += monomial_symmetrized * term.1;
+                }
+                Err(e) => {
+                    return Err(e);
+                }
             }
         }
         Ok(answer)
@@ -1138,7 +1152,13 @@ mod test {
         let t_squared = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., -1., -1., 0., 0.],
         };
-        assert_eq!(t_to_one.differentiate().expect("this can be differentiated without issue").coeffs, one.coeffs);
+        assert_eq!(
+            t_to_one
+                .differentiate()
+                .expect("this can be differentiated without issue")
+                .coeffs,
+            one.coeffs
+        );
         let neg_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [-1., -1., 0., 0., 0., 0.],
         };
@@ -1252,7 +1272,7 @@ mod test {
                 degree < 6,
             );
             if degree >= 6 {
-                assert!(in_sym_basis.is_none());
+                assert!(in_sym_basis.is_err());
             } else {
                 let real_in_sym_basis = in_sym_basis
                     .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
