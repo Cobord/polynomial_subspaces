@@ -250,48 +250,40 @@ where
             });
             return Some(Self { coeffs });
         }
-        if n==2 {
-            let coeffs: [T; N] = core::array::from_fn(|idx| {
-                match idx {
-                    0 => 1.into(),
-                    2 => (-3).into(),
-                    3 => (-3).into(),
-                    _ => 0.into()
-                }
+        if n == 2 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
+                0 => 1.into(),
+                2 => (-3).into(),
+                3 => (-3).into(),
+                _ => 0.into(),
             });
             return Some(Self { coeffs });
         }
-        if n==3 {
-            let coeffs: [T; N] = core::array::from_fn(|idx| {
-                match idx {
-                    1 => (-1).into(),
-                    2 => (3).into(),
-                    3 => (3).into(),
-                    _ => 0.into()
-                }
+        if n == 3 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
+                1 => (-1).into(),
+                2 => (3).into(),
+                3 => (3).into(),
+                _ => 0.into(),
             });
             return Some(Self { coeffs });
         }
-        if n==4 {
-            let coeffs: [T; N] = core::array::from_fn(|idx| {
-                match idx {
-                    2 => (2).into(),
-                    4 => (-5).into(),
-                    5 => (-5).into(),
-                    _ => 0.into()
-                }
+        if n == 4 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
+                2 => (2).into(),
+                4 => (-5).into(),
+                5 => (-5).into(),
+                _ => 0.into(),
             });
             return Some(Self { coeffs });
         }
-        if n==5 {
-            let coeffs: [T; N] = core::array::from_fn(|idx| {
-                match idx {
-                    2 => (-8).into(),
-                    3 => (-18).into(),
-                    4 => 5.into(),
-                    5 => 5.into(),
-                    _ => 0.into()
-                }
+        if n == 5 {
+            let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
+                2 => (-8).into(),
+                3 => (-18).into(),
+                4 => 5.into(),
+                5 => 5.into(),
+                _ => 0.into(),
             });
             return Some(Self { coeffs });
         }
@@ -299,8 +291,7 @@ where
     }
 
     /// helper do differentiate when a single coefficient is 1 and the rest are 0
-    pub(crate) fn differentiate_single(n: usize) -> Self
-    {
+    pub(crate) fn differentiate_single(n: usize) -> Self {
         let hard_coded = Self::differentiate_single_hardcoded(n);
         if let Some(got_hard_coded) = hard_coded {
             return got_hard_coded;
@@ -357,16 +348,19 @@ where
         answer
     }
 
-    const fn product_goes_01(idx_is_zero: bool, jdx_is_zero : bool) -> Result<usize, (usize, usize)> {
-        match (idx_is_zero,jdx_is_zero) {
+    const fn product_goes_01(
+        idx_is_zero: bool,
+        jdx_is_zero: bool,
+    ) -> Result<usize, (usize, usize)> {
+        match (idx_is_zero, jdx_is_zero) {
             (true, true) => {
                 // (1-t)^2
                 // 1-t,t,(1-t)*t*(1-t),t*t*(1-t)
                 // (1-t)^2 = (1-t) - (1-t)*t
                 // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
                 // (1-t)^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + (1-t)
-                Err((0,2))
-            },
+                Err((0, 2))
+            }
             (true, false) => {
                 // (1-t)*t
                 Ok(2)
@@ -381,7 +375,7 @@ where
                 // t^2 = -1*(1-t)*t+t
                 // (1-t)*t*(1-t) + t*t*(1-t) = t*(1-t)
                 // t^2 = -1 * (1-t)*t*(1-t) + -1 * t*t*(1-t) + t
-                Err((1,2))
+                Err((1, 2))
             }
         }
     }
@@ -401,13 +395,13 @@ where
         }
         match answer {
             Ok(mut idx) => {
-                idx += (products_power_of_s)<<1;
+                idx += (products_power_of_s) << 1;
                 Ok(idx)
             }
-            Err((mut x,mut y)) => {
+            Err((mut x, mut y)) => {
                 x += products_power_of_s << 1;
                 y += products_power_of_s << 1;
-                Err((x,y))
+                Err((x, y))
             }
         }
     }
@@ -551,20 +545,27 @@ where
     #[allow(dead_code)]
     fn pretty_format(&self, variable: String, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
     where
-        T : std::fmt::Debug
+        T: std::fmt::Debug,
     {
-        let answers : [String; N] = core::array::from_fn(|idx| {
+        let answers: [String; N] = core::array::from_fn(|idx| {
             if zero_pred.map_or(false, |f| f(&self.coeffs[idx])) {
                 "0".to_string()
             } else {
-                let zeroth_part = format!("({:?})",self.coeffs[idx]);
-                let first_part = if idx % 2 == 0 {format!("(1 - {})",variable)} else {variable.to_string()};
-                let s_power = idx>>1;
-                if s_power == 0 {
-                    format!("{}*{}",zeroth_part,first_part)
+                let zeroth_part = format!("({:?})", self.coeffs[idx]);
+                let first_part = if idx % 2 == 0 {
+                    format!("(1 - {})", variable)
                 } else {
-                    let second_part = format!("({}**{})*((1 - {})**{})",variable,s_power,variable,s_power);
-                    format!("{}*{}*{}",zeroth_part,first_part,second_part)
+                    variable.to_string()
+                };
+                let s_power = idx >> 1;
+                if s_power == 0 {
+                    format!("{}*{}", zeroth_part, first_part)
+                } else {
+                    let second_part = format!(
+                        "({}**{})*((1 - {})**{})",
+                        variable, s_power, variable, s_power
+                    );
+                    format!("{}*{}*{}", zeroth_part, first_part, second_part)
                 }
             }
         });
@@ -696,8 +697,7 @@ where
     }
 
     #[allow(dead_code)]
-    fn differentiate(self) -> Self
-    {
+    fn differentiate(self) -> Self {
         let mut answer = Self::create_zero_poly();
         for (idx, cur_coeff) in self.coeffs.into_iter().enumerate() {
             let mut new_term = Self::differentiate_single(idx);
@@ -715,7 +715,6 @@ where
     ) -> Option<Self> {
         self.try_product(rhs, zero_pred, sure_will_cancel)
     }
-
 }
 
 impl<const N: usize, T> FundamentalTheorem<T> for SymmetricalBasisPolynomial<N, T>
@@ -1033,6 +1032,27 @@ where
     }
 }
 
+impl<const N: usize, T> Neg for SymmetricalBasisPolynomial<N, T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>,
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let mut answer = Self::create_zero_poly();
+        answer -= self;
+        answer
+    }
+}
+
 impl<const N: usize, T> TryFrom<MonomialBasisPolynomial<T>> for SymmetricalBasisPolynomial<N, T>
 where
     T: Clone
@@ -1123,10 +1143,7 @@ mod test {
             coeffs: [-1., -1., 0., 0., 0., 0.],
         };
         let diff_0 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(0);
-        assert_eq!(
-            diff_0.coeffs,
-            neg_one.coeffs
-        );
+        assert_eq!(diff_0.coeffs, neg_one.coeffs);
         assert_eq!(
             SymmetricalBasisPolynomial::<6, f64>::differentiate_single(1).coeffs,
             one.coeffs
@@ -1142,7 +1159,7 @@ mod test {
         let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., 0., 0., 0., 0.],
         };
-        let expected = t_to_one - t_squared*2. + t_cubed;
+        let expected = t_to_one - t_squared * 2. + t_cubed;
         assert_eq!(single_term_2.coeffs, expected.coeffs);
         let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., 0., 0., 0., 0.],
@@ -1152,13 +1169,12 @@ mod test {
         };
         let expected: SymmetricalBasisPolynomial<6, f64> = one + t_to_one * (-4.) + t_squared * 3.;
         let diff_2 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(2);
-        let pretty_diff_2 = diff_2.pretty_format("t".to_string(), Some(&|z : &f64| z.abs()<f64::EPSILON));
-        let pretty_expected = expected.pretty_format("t".to_string(), Some(&|z:&f64| z.abs()<f64::EPSILON));
+        let pretty_diff_2 =
+            diff_2.pretty_format("t".to_string(), Some(&|z: &f64| z.abs() < f64::EPSILON));
+        let pretty_expected =
+            expected.pretty_format("t".to_string(), Some(&|z: &f64| z.abs() < f64::EPSILON));
         assert_eq!(pretty_expected, pretty_diff_2);
-        assert_eq!(
-            diff_2.coeffs,
-            expected.coeffs
-        );
+        assert_eq!(diff_2.coeffs, expected.coeffs);
         // derivative of t*s=t^2-t^3
         // is 2t-3t^2
         let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
@@ -1210,7 +1226,7 @@ mod test {
             .multiply_by_t(true, &|z| z.abs() < 0.000001)
             .unwrap();
         let expected: SymmetricalBasisPolynomial<6, f64> =
-            t_fourth*5. - t_to_one*8. + t_squared*3.;
+            t_fourth * 5. - t_to_one * 8. + t_squared * 3.;
         assert_eq!(
             SymmetricalBasisPolynomial::<6, f64>::differentiate_single(5).coeffs,
             expected.coeffs

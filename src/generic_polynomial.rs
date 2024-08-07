@@ -20,30 +20,31 @@ pub enum PointSpecifier<T> {
     NegOne,
     Zero,
     One,
-    General(T)
+    General(T),
 }
 
 pub trait Generic1DPoly<T>:
     Sized
     + AddAssign<T>
     + Add<T, Output = Self>
-    + Add<Self,Output = Self>
+    + Add<Self, Output = Self>
     + AddAssign<Self>
     + SubAssign<T>
     + Sub<T, Output = Self>
-    + Sub<Self,Output = Self>
+    + Sub<Self, Output = Self>
     + SubAssign<Self>
     + MulAssign<T>
     + Mul<T, Output = Self>
+    + Neg<Output = Self>
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
-        + Add<Output = T>
-        + Mul<Output = T>
-        + MulAssign
+        + AddAssign<T>
+        + Add<T, Output = T>
+        + Mul<T, Output = T>
+        + MulAssign<T>
         + From<SmallIntegers>
-        + Sub<Output = T>,
+        + Sub<T, Output = T>,
 {
     fn create_zero_poly() -> Self;
     fn create_monomial(
@@ -76,8 +77,8 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         sure_will_cancel: bool,
     ) -> Option<Self>;
-    
-    fn evaluate_at_specifier(&self, around_here : PointSpecifier<T>) -> T {
+
+    fn evaluate_at_specifier(&self, around_here: PointSpecifier<T>) -> T {
         match around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -87,7 +88,7 @@ where
     }
 
     /// first order approximation around the given point
-    fn linear_approx(self, around_here : PointSpecifier<T>) -> (T,T) {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> (T, T) {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -96,20 +97,20 @@ where
         };
         let derivative = self.differentiate();
         let linear_term = derivative.evaluate_at_specifier(around_here);
-        (constant_term,linear_term)
+        (constant_term, linear_term)
     }
 
     #[allow(dead_code)]
     fn linear_approx_poly(self, around_here: PointSpecifier<T>) -> Option<Self> {
-        let (constant_term,linear_term) = self.linear_approx(around_here);
+        let (constant_term, linear_term) = self.linear_approx(around_here);
         let mut answer = Self::create_zero_poly();
         answer += constant_term;
         let mut linear_poly = Self::create_monomial(1, &|_| false, false)?;
         linear_poly *= linear_term;
         Some(answer + linear_poly)
     }
-    
 }
+
 pub trait FundamentalTheorem<T>: Generic1DPoly<T>
 where
     T: Clone

@@ -443,6 +443,32 @@ where
     }
 }
 
+impl<
+        const N: usize,
+        const TWICE_ALPHA_PLUS_OFFSET: usize,
+        const TWICE_BETA_PLUS_OFFSET: usize,
+        T,
+    > Neg for JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>,
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let mut answer = Self::create_zero_poly();
+        answer -= self;
+        answer
+    }
+}
+
 // alpha = beta = Galpha - 1/2
 // twice_alpha_plus_offset = 2*Galpha
 #[allow(dead_code)]

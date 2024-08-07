@@ -6,7 +6,8 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::ops::DivAssign;
 
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem, Generic1DPoly, PointSpecifier, SmallIntegers
+    cubic_solve, quadratic_solve, quartic_solve, DegreeType, FindZeroError, FundamentalTheorem,
+    Generic1DPoly, PointSpecifier, SmallIntegers,
 };
 pub struct MonomialBasisPolynomial<T>
 where
@@ -35,8 +36,7 @@ where
         + Sub<Output = T>
         + SubAssign<T>,
 {
-    fn extract_coeff(&self,which : DegreeType) -> T
-    {
+    fn extract_coeff(&self, which: DegreeType) -> T {
         self.coeffs
             .iter()
             .filter_map(|(power, coeff)| {
@@ -204,7 +204,7 @@ where
         Some(Self { coeffs: answer })
     }
 
-    fn linear_approx(self, around_here : PointSpecifier<T>) -> (T,T) {
+    fn linear_approx(self, around_here: PointSpecifier<T>) -> (T, T) {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
             PointSpecifier::Zero => self.evaluate_at_zero(),
@@ -215,22 +215,22 @@ where
             PointSpecifier::NegOne => {
                 let derivative = self.differentiate();
                 derivative.evaluate_at_neg_one()
-            },
+            }
             PointSpecifier::Zero => {
                 // overrides the default implementation because this way when asking
                 // for linear approximation at 0, don't have to differentiate
                 self.extract_coeff(1)
-            },
+            }
             PointSpecifier::One => {
                 let derivative = self.differentiate();
                 derivative.evaluate_at_one()
-            },
+            }
             PointSpecifier::General(t) => {
                 let derivative = self.differentiate();
                 derivative.evaluate_at(t)
-            },
+            }
         };
-        (constant_term,linear_term)
+        (constant_term, linear_term)
     }
 }
 
@@ -254,7 +254,7 @@ where
         my_cube_root: &impl Fn(&T) -> T,
     ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
-        
+
         match degree {
             Some(0) => Ok(vec![]),
             Some(1) => {
@@ -527,5 +527,26 @@ where
                 .map(|(degree, coeff)| (degree, -coeff)),
         );
         self.coeffs.sort_by(|z0, z1| z0.0.cmp(&z1.0));
+    }
+}
+
+impl<T> Neg for MonomialBasisPolynomial<T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>,
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let mut answer = Self::create_zero_poly();
+        answer -= self;
+        answer
     }
 }
