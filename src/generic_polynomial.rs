@@ -95,6 +95,7 @@ where
     /// if sure_will_cancel then even if we seem to be breaking those constraints
     /// then ignore that problem because we are told it will cancel out and that term
     /// will be 0 anyway
+    #[allow(dead_code)]
     fn truncating_product(
         &self,
         rhs: &Self,

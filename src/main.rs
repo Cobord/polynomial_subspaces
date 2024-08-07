@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "GADT", feature(generic_const_exprs))]
+
 use bezier_rs::Bezier;
 mod generic_polynomial;
 mod jacobi;

@@ -92,27 +92,129 @@ impl From<Bezier> for TwoPolynomials<f64, SymmetricalBasisPolynomial<4, f64>> {
     }
 }
 
-/*
-#![feature(generic_const_exprs)]
-
-impl<const N: usize,T> TwoPolynomials<N,T>
+#[cfg(feature = "GADT")]
+impl<const N: usize, T> TwoPolynomials<T, SymmetricalBasisPolynomial<N, T>>
 where
-    T : Clone + Neg<Output=T> + AddAssign+ Add<Output=T>+Mul<Output=T>+MulAssign+From<SmallIntegers>+Sub<Output=T>
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>,
 {
     #[allow(dead_code)]
-    fn dot<const M : usize>(&self, _other : &TwoSymmetricalBasisPolynomials<M,T>) -> SymmetrialBasisPolynomial<{
-        SymmetrialBasisPolynomial::<N,T>::polynomial_degree_bound()+SymmetrialBasisPolynomial::<M,T>::polynomial_degree_bound()+1},T> {
-        todo!()
+    fn dot_generic<const M: usize>(
+        self,
+        other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
+        zero_pred: &impl Fn(&T) -> bool,
+        sure_will_cancel: bool,
+    ) -> Option<
+        SymmetricalBasisPolynomial<
+            {
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            },
+            T,
+        >,
+    > {
+        let new_self_x = self
+            .x
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_self_y = self
+            .y
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_other_x = other
+            .x
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_other_y = other
+            .y
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+
+        let x1x2 = new_self_x.truncating_product(&new_other_x, zero_pred, sure_will_cancel)?;
+        let y1y2 = new_self_y.truncating_product(&new_other_y, zero_pred, sure_will_cancel)?;
+        Some(x1x2 + y1y2)
     }
 
     #[allow(dead_code)]
-    fn cross<const M : usize>(&self, _other : &TwoSymmetricalBasisPolynomials<M,T>) -> SymmetrialBasisPolynomial<{
-        SymmetrialBasisPolynomial::<N,T>::polynomial_degree_bound()+SymmetrialBasisPolynomial::<M,T>::polynomial_degree_bound()+1},T> {
-        todo!()
+    fn cross_generic<const M: usize>(
+        self,
+        other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
+        zero_pred: &impl Fn(&T) -> bool,
+        sure_will_cancel: bool,
+    ) -> Option<
+        SymmetricalBasisPolynomial<
+            {
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            },
+            T,
+        >,
+    > {
+        let new_self_x = self
+            .x
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_self_y = self
+            .y
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_other_x = other
+            .x
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+        let new_other_y = other
+            .y
+            .try_convert_degree::<{
+                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
+                    + 2
+            }>(zero_pred)
+            .ok()?;
+
+        let x1y2 = new_self_x.truncating_product(&new_other_y, zero_pred, sure_will_cancel)?;
+        let y1x2 = new_self_y.truncating_product(&new_other_x, zero_pred, sure_will_cancel)?;
+        Some(x1y2 - y1x2)
     }
 }
-*/
 
+#[cfg(not(feature = "GADT"))]
 impl<T, P> TwoPolynomials<T, P>
 where
     T: Clone
@@ -133,8 +235,8 @@ where
     /// are ending up with something that doesn't fit within those constraints because it is degree 6
     #[allow(dead_code)]
     fn dot_generic(
-        &self,
-        other: &Self,
+        self,
+        other: Self,
         zero_pred: &impl Fn(&T) -> bool,
         sure_will_cancel: bool,
     ) -> Option<P> {
@@ -155,8 +257,8 @@ where
     /// are ending up with something that doesn't fit within those constraints because it is degree 6
     #[allow(dead_code)]
     fn cross_generic(
-        &self,
-        other: &Self,
+        self,
+        other: Self,
         zero_pred: &impl Fn(&T) -> bool,
         sure_will_cancel: bool,
     ) -> Option<P> {
