@@ -110,7 +110,6 @@ where
         self,
         other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
         zero_pred: &impl Fn(&T) -> bool,
-        sure_will_cancel: bool,
     ) -> Option<
         SymmetricalBasisPolynomial<
             {
@@ -154,8 +153,8 @@ where
             }>(zero_pred)
             .ok()?;
 
-        let x1x2 = new_self_x.truncating_product(&new_other_x, zero_pred, sure_will_cancel)?;
-        let y1y2 = new_self_y.truncating_product(&new_other_y, zero_pred, sure_will_cancel)?;
+        let x1x2 = new_self_x.truncating_product(&new_other_x, zero_pred, true)?;
+        let y1y2 = new_self_y.truncating_product(&new_other_y, zero_pred, true)?;
         Some(x1x2 + y1y2)
     }
 
@@ -164,7 +163,6 @@ where
         self,
         other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
         zero_pred: &impl Fn(&T) -> bool,
-        sure_will_cancel: bool,
     ) -> Option<
         SymmetricalBasisPolynomial<
             {
@@ -208,8 +206,8 @@ where
             }>(zero_pred)
             .ok()?;
 
-        let x1y2 = new_self_x.truncating_product(&new_other_y, zero_pred, sure_will_cancel)?;
-        let y1x2 = new_self_y.truncating_product(&new_other_x, zero_pred, sure_will_cancel)?;
+        let x1y2 = new_self_x.truncating_product(&new_other_y, zero_pred, true)?;
+        let y1x2 = new_self_y.truncating_product(&new_other_x, zero_pred, true)?;
         Some(x1y2 - y1x2)
     }
 }
