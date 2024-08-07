@@ -112,6 +112,9 @@ where
     }
 
     /// first order approximation around the given point
+    /// see override in ordinary_polynomial for a case
+    /// when can avoid the differentiation
+    /// both avoiding that extra work and the potential source of error
     fn linear_approx(self, around_here: PointSpecifier<T>) -> Result<(T, T), DifferentiateError> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
@@ -132,6 +135,9 @@ where
         let (constant_term, linear_term) = self.linear_approx(around_here).map_err(Ok)?;
         let mut answer = Self::create_zero_poly();
         answer += constant_term;
+        // the subspace doesn't include the linear function x
+        // that should be very unusual, because we typically truncate
+        // by degree and that is too low of a degree to fall to the chopping block
         let mut linear_poly = Self::create_monomial(1, &|_| false, false).map_err(Err)?;
         linear_poly *= linear_term;
         Ok(answer + linear_poly)
