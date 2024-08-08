@@ -105,8 +105,13 @@ where
         None
     }
 
-    fn differentiate(self) -> Result<Self, DifferentiateError> {
-        todo!()
+    fn differentiate(mut self) -> Result<Self, DifferentiateError> {
+        self.coeffs.rotate_left(1);
+        for idx in 1..(N-1) {
+            self.coeffs[idx] *= ((idx+1) as SmallIntegers).into();
+        }
+        self.coeffs[N-1] = 0.into();
+        Ok(self)
     }
 
     fn truncating_product(

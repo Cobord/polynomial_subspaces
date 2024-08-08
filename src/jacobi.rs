@@ -337,8 +337,11 @@ where
         + Sub<Output = T>
         + SubAssign<T>,
 {
-    fn add_assign(&mut self, _rhs: T) {
-        todo!()
+    fn add_assign(&mut self, rhs: T) {
+        if N==0 {
+            panic!("The zero subspace");
+        }
+        self.coeffs[0] += rhs;
     }
 }
 
@@ -384,8 +387,11 @@ where
         + Sub<Output = T>
         + SubAssign<T>,
 {
-    fn sub_assign(&mut self, _rhs: T) {
-        todo!()
+    fn sub_assign(&mut self, rhs: T) {
+        if N==0 {
+            panic!("The zero subspace");
+        }
+        self.coeffs[0] -= rhs;
     }
 }
 
