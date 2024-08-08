@@ -9,15 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-name = "bezier"
-version = "0.1.0"
-dependencies = [
- "bezier-rs",
- "fast_polynomial",
- "glam 0.28.0",
-]
-
-[[package]]
 name = "bezier-rs"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -57,6 +48,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "polynomial_subspaces"
+version = "0.1.0"
+dependencies = [
+ "bezier-rs",
+ "fast_polynomial",
+ "glam 0.28.0",
 ]
 
 [[package]]

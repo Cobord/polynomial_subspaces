@@ -1,5 +1,5 @@
 [package]
-name = "bezier"
+name = "polynomial_subspaces"
 version = "0.1.0"
 edition = "2021"
 
