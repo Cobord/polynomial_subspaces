@@ -627,10 +627,14 @@ where
     ) -> Result<SymmetricalBasisPolynomial<M, T>, ()> {
         if M < N {
             match self.polynomial_degree(zero_pred) {
-                Some(big_degree) if usize::from(big_degree) >= M => {
+                Some(big_degree) if usize::from(big_degree) > SymmetricalBasisPolynomial::<M,T>::polynomial_degree_bound() => {
                     return Err(());
                 }
-                Some(_) => {}
+                Some(_) => {
+                    if !self.coeffs[M..].iter().all(zero_pred) {
+                        return Err(());
+                    }
+                },
                 None => return Ok(SymmetricalBasisPolynomial::<M, T>::create_zero_poly()),
             }
         }
@@ -772,10 +776,7 @@ where
         } else {
             self.coeffs[1].clone() - self.coeffs[0].clone()
         };
-        if !zero_pred(&linear_coeff_truncated) {
-            return false;
-        }
-        self.coeffs[1..].iter().all(zero_pred)
+        zero_pred(&linear_coeff_truncated) && self.coeffs[1..].iter().all(zero_pred)
     }
 
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType> {

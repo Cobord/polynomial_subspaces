@@ -71,10 +71,13 @@ where
     }
 
     fn create_monomial(
-        _degree: DegreeType,
+        degree: DegreeType,
         _zero_pred: &impl Fn(&T) -> bool,
         _surely_fits: bool,
     ) -> Result<Self, MonomialError> {
+        if (degree as usize) >= N {
+            return Err(MonomialError::DesiredMonomialNotInSpace(degree));
+        }
         todo!();
     }
 
