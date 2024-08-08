@@ -12,3 +12,5 @@ fast_polynomial = "0.1.0"
 GADT = []
 pade = []
 bezier = ["dep:bezier-rs", "dep:glam"]
+all_stable = ["pade","bezier"]
+all = ["GADT","all_stable"]

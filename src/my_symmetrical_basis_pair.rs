@@ -1004,6 +1004,12 @@ where
         + Sub<Output = T>,
 {
     fn sub_assign(&mut self, rhs: T) {
+        if N<1 {
+            panic!("The zero subspace");
+        }
+        if N<2 {
+            panic!("The subspace spanned by only (1-t)");
+        }
         self.coeffs[0] -= rhs.clone();
         self.coeffs[1] -= rhs.clone();
     }
@@ -1022,6 +1028,12 @@ where
         + Sub<Output = T>,
 {
     fn add_assign(&mut self, rhs: T) {
+        if N<1 {
+            panic!("The zero subspace");
+        }
+        if N<2 {
+            panic!("The subspace spanned by only (1-t)");
+        }
         self.coeffs[0] += rhs.clone();
         self.coeffs[1] += rhs.clone();
     }
@@ -1075,11 +1087,16 @@ where
         + Sub<Output = T>,
 {
     type Output = Self;
-    fn sub(self, rhs: T) -> Self::Output {
-        let mut coeffs = self.coeffs.clone();
-        coeffs[0] = coeffs[0].clone() - rhs.clone();
-        coeffs[1] = coeffs[1].clone() - rhs.clone();
-        Self { coeffs }
+    fn sub(mut self, rhs: T) -> Self::Output {
+        if N<1 {
+            panic!("The zero subspace");
+        }
+        if N<2 {
+            panic!("The subspace spanned by only (1-t)");
+        }
+        self.coeffs[0] = self.coeffs[0].clone() - rhs.clone();
+        self.coeffs[1] = self.coeffs[1].clone() - rhs.clone();
+        self
     }
 }
 
@@ -1095,11 +1112,16 @@ where
         + Sub<Output = T>,
 {
     type Output = Self;
-    fn add(self, rhs: T) -> Self::Output {
-        let mut coeffs = self.coeffs.clone();
-        coeffs[0] = coeffs[0].clone() + rhs.clone();
-        coeffs[1] = coeffs[1].clone() + rhs.clone();
-        Self { coeffs }
+    fn add(mut self, rhs: T) -> Self::Output {
+        if N<1 {
+            panic!("The zero subspace");
+        }
+        if N<2 {
+            panic!("The subspace spanned by only (1-t)");
+        }
+        self.coeffs[0] += rhs.clone();
+        self.coeffs[1] += rhs;
+        self
     }
 }
 
