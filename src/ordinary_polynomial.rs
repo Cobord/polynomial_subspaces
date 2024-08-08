@@ -2,11 +2,12 @@
 /// not packed tightly or guaranteeing sorting by degree
 /// only using for testing
 /// can get rid of it after have tests that don't need it anymore
-use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign,DivAssign};
+use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
-    FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
+    cubic_solve, quadratic_solve, quartic_solve, BasisIndexingType, DegreeType, DifferentiateError,
+    FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
+    SubspaceError,
 };
 #[repr(transparent)]
 pub struct MonomialBasisPolynomial<T>
@@ -231,6 +232,44 @@ where
             }
         };
         Ok((constant_term, linear_term))
+    }
+
+    fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError> {
+        let mut answer = Vec::with_capacity(up_to as usize);
+        for degree in 0..up_to {
+            let to_push = Self {
+                coeffs: vec![(degree as DegreeType, 1.into())],
+            };
+            answer.push(to_push);
+        }
+        Ok(answer)
+    }
+
+    fn set_basis_vector_coeff(
+        &mut self,
+        which_coeff: BasisIndexingType,
+        new_coeff: T,
+    ) -> Result<(), SubspaceError> {
+        // this is not stored in the same way as just an array of coefficients for each basis vector
+        // a priori, they can be mixed up and have the same basis vector corresponding to multiple entries
+        // but we still know what is meant by replacing the t^{which_coeff} term
+        // though it requires some extra work than just indexing into a [T;N]
+        self.coeffs.sort_by(|z0, z1| z0.0.cmp(&z1.0));
+        let which_coeff_degree = which_coeff as DegreeType;
+        self.coeffs.retain(|(z0, _z1)| *z0 != which_coeff_degree);
+        let binary_searched = self
+            .coeffs
+            .binary_search_by(|(z0, _z1)| z0.cmp(&which_coeff_degree));
+        match binary_searched {
+            Ok(_) => {
+                panic!("Those terms should be gone because of the retain");
+            }
+            Err(insertion_point) => {
+                self.coeffs
+                    .insert(insertion_point, (which_coeff_degree, new_coeff));
+            }
+        }
+        Ok(())
     }
 }
 

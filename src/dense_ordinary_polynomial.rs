@@ -3,8 +3,8 @@ use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use fast_polynomial::PolyNum;
 
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
-    FundamentalTheorem, Generic1DPoly, MonomialError, SmallIntegers,
+    cubic_solve, quadratic_solve, quartic_solve, BasisIndexingType, DegreeType, DifferentiateError,
+    FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError, SmallIntegers, SubspaceError,
 };
 
 #[repr(transparent)]
@@ -107,10 +107,10 @@ where
 
     fn differentiate(mut self) -> Result<Self, DifferentiateError> {
         self.coeffs.rotate_left(1);
-        for idx in 1..(N-1) {
-            self.coeffs[idx] *= ((idx+1) as SmallIntegers).into();
+        for idx in 1..(N - 1) {
+            self.coeffs[idx] *= ((idx + 1) as SmallIntegers).into();
         }
-        self.coeffs[N-1] = 0.into();
+        self.coeffs[N - 1] = 0.into();
         Ok(self)
     }
 
@@ -121,6 +121,32 @@ where
         _sure_will_cancel: bool,
     ) -> Option<Self> {
         todo!()
+    }
+
+    fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError> {
+        if (up_to as usize) > N {
+            return Err(SubspaceError::NoSuchBasisVector(up_to - 1));
+        }
+        let mut answer = Vec::with_capacity(up_to as usize);
+        for degree in 0..up_to {
+            let to_push = Self::create_monomial(degree as DegreeType, &|_| false, true).or(Err(
+                SubspaceError::NoSuchBasisVector(degree as BasisIndexingType),
+            ))?;
+            answer.push(to_push);
+        }
+        Ok(answer)
+    }
+
+    fn set_basis_vector_coeff(
+        &mut self,
+        which_coeff: BasisIndexingType,
+        new_coeff: T,
+    ) -> Result<(), SubspaceError> {
+        if (which_coeff as usize) >= N {
+            return Err(SubspaceError::NoSuchBasisVector(which_coeff));
+        }
+        self.coeffs[which_coeff as usize] = new_coeff;
+        Ok(())
     }
 }
 

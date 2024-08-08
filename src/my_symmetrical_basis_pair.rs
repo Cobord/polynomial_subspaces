@@ -6,8 +6,9 @@ use bezier_rs::Bezier;
 
 use crate::{
     generic_polynomial::{
-        cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
-        FundamentalTheorem, Generic1DPoly, MonomialError, SmallIntegers,
+        cubic_solve, quadratic_solve, quartic_solve, BasisIndexingType, DegreeType,
+        DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError,
+        SmallIntegers, SubspaceError,
     },
     ordinary_polynomial::MonomialBasisPolynomial,
 };
@@ -627,14 +628,17 @@ where
     ) -> Result<SymmetricalBasisPolynomial<M, T>, ()> {
         if M < N {
             match self.polynomial_degree(zero_pred) {
-                Some(big_degree) if usize::from(big_degree) > SymmetricalBasisPolynomial::<M,T>::polynomial_degree_bound() => {
+                Some(big_degree)
+                    if usize::from(big_degree)
+                        > SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound() =>
+                {
                     return Err(());
                 }
                 Some(_) => {
                     if !self.coeffs[M..].iter().all(zero_pred) {
                         return Err(());
                     }
-                },
+                }
                 None => return Ok(SymmetricalBasisPolynomial::<M, T>::create_zero_poly()),
             }
         }
@@ -829,6 +833,36 @@ where
     ) -> Option<Self> {
         self.try_product(rhs, zero_pred, sure_will_cancel)
     }
+
+    fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError> {
+        if (up_to as usize) > N {
+            return Err(SubspaceError::NoSuchBasisVector(up_to - 1));
+        }
+        let mut answer = Vec::with_capacity(up_to as usize);
+        for degree in 0..up_to {
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                if (idx as DegreeType) == (degree as DegreeType) {
+                    1.into()
+                } else {
+                    0.into()
+                }
+            });
+            answer.push(Self { coeffs });
+        }
+        Ok(answer)
+    }
+
+    fn set_basis_vector_coeff(
+        &mut self,
+        which_coeff: BasisIndexingType,
+        new_coeff: T,
+    ) -> Result<(), SubspaceError> {
+        if (which_coeff as usize) >= N {
+            return Err(SubspaceError::NoSuchBasisVector(which_coeff));
+        }
+        self.coeffs[which_coeff as usize] = new_coeff;
+        Ok(())
+    }
 }
 
 impl<const N: usize, T> SymmetricalBasisPolynomial<N, T>
@@ -1004,10 +1038,10 @@ where
         + Sub<Output = T>,
 {
     fn sub_assign(&mut self, rhs: T) {
-        if N<1 {
+        if N < 1 {
             panic!("The zero subspace");
         }
-        if N<2 {
+        if N < 2 {
             panic!("The subspace spanned by only (1-t)");
         }
         self.coeffs[0] -= rhs.clone();
@@ -1028,10 +1062,10 @@ where
         + Sub<Output = T>,
 {
     fn add_assign(&mut self, rhs: T) {
-        if N<1 {
+        if N < 1 {
             panic!("The zero subspace");
         }
-        if N<2 {
+        if N < 2 {
             panic!("The subspace spanned by only (1-t)");
         }
         self.coeffs[0] += rhs.clone();
@@ -1088,10 +1122,10 @@ where
 {
     type Output = Self;
     fn sub(mut self, rhs: T) -> Self::Output {
-        if N<1 {
+        if N < 1 {
             panic!("The zero subspace");
         }
-        if N<2 {
+        if N < 2 {
             panic!("The subspace spanned by only (1-t)");
         }
         self.coeffs[0] = self.coeffs[0].clone() - rhs.clone();
@@ -1113,10 +1147,10 @@ where
 {
     type Output = Self;
     fn add(mut self, rhs: T) -> Self::Output {
-        if N<1 {
+        if N < 1 {
             panic!("The zero subspace");
         }
-        if N<2 {
+        if N < 2 {
             panic!("The subspace spanned by only (1-t)");
         }
         self.coeffs[0] += rhs.clone();

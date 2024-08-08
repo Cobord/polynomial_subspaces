@@ -4,8 +4,8 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{
-    DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly,
-    MonomialError, SmallIntegers,
+    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
+    Generic1DPoly, MonomialError, SmallIntegers, SubspaceError,
 };
 
 #[allow(dead_code)]
@@ -156,6 +156,36 @@ where
         _sure_will_cancel: bool,
     ) -> Option<Self> {
         todo!()
+    }
+
+    fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError> {
+        if (up_to as usize) > N {
+            return Err(SubspaceError::NoSuchBasisVector(up_to - 1));
+        }
+        let mut answer = Vec::with_capacity(up_to as usize);
+        for degree in 0..up_to {
+            let coeffs: [T; N] = core::array::from_fn(|idx| {
+                if (idx as DegreeType) == (degree as DegreeType) {
+                    1.into()
+                } else {
+                    0.into()
+                }
+            });
+            answer.push(Self { coeffs });
+        }
+        Ok(answer)
+    }
+
+    fn set_basis_vector_coeff(
+        &mut self,
+        which_coeff: BasisIndexingType,
+        new_coeff: T,
+    ) -> Result<(), SubspaceError> {
+        if (which_coeff as usize) >= N {
+            return Err(SubspaceError::NoSuchBasisVector(which_coeff));
+        }
+        self.coeffs[which_coeff as usize] = new_coeff;
+        Ok(())
     }
 }
 
@@ -338,7 +368,7 @@ where
         + SubAssign<T>,
 {
     fn add_assign(&mut self, rhs: T) {
-        if N==0 {
+        if N == 0 {
             panic!("The zero subspace");
         }
         self.coeffs[0] += rhs;
@@ -388,7 +418,7 @@ where
         + SubAssign<T>,
 {
     fn sub_assign(&mut self, rhs: T) {
-        if N==0 {
+        if N == 0 {
             panic!("The zero subspace");
         }
         self.coeffs[0] -= rhs;

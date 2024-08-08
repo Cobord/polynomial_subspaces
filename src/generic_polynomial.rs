@@ -1,6 +1,7 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub type DegreeType = u8;
+pub type BasisIndexingType = u8;
 pub type SmallIntegers = i8;
 
 pub enum FindZeroError {
@@ -20,6 +21,14 @@ pub enum DifferentiateError {
 pub enum MonomialError {
     #[allow(dead_code)]
     DesiredMonomialNotInSpace(DegreeType),
+}
+
+#[derive(Debug)]
+pub enum SubspaceError {
+    #[allow(dead_code)]
+    NotStoredAsCoefficients,
+    #[allow(dead_code)]
+    NoSuchBasisVector(BasisIndexingType),
 }
 
 // TODO
@@ -145,6 +154,22 @@ where
         linear_poly *= linear_term;
         Ok(answer + linear_poly)
     }
+
+    /// assuming there is some natural number indexed basis at work behind the scenes
+    /// give the first up_to of them as long as they are all within this subspace
+    /// with the cutoff N being some larger natural number
+    /// this can fail when this implicit assumption does not hold in which case NotStoredAsCoefficients
+    /// or the up_to being too large causing us to leave the subspace, NoSuchBasisVector
+    #[allow(dead_code)]
+    fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError>;
+
+    /// with the same assumptions, set the coefficient of a particular basis polynomial
+    #[allow(dead_code)]
+    fn set_basis_vector_coeff(
+        &mut self,
+        which_coeff: BasisIndexingType,
+        new_coeff: T,
+    ) -> Result<(), SubspaceError>;
 }
 
 pub trait FundamentalTheorem<T>: Generic1DPoly<T>
