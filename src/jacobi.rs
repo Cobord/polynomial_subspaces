@@ -161,6 +161,46 @@ impl<
         const TWICE_ALPHA_PLUS_OFFSET: usize,
         const TWICE_BETA_PLUS_OFFSET: usize,
         T,
+    > JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + DivAssign<T>,
+{
+    #[allow(dead_code)]
+    fn base_change<U>(
+        self,
+    ) -> JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U>
+    where
+        U: Clone
+            + Neg<Output = U>
+            + AddAssign<U>
+            + Add<U, Output = U>
+            + Mul<U, Output = U>
+            + MulAssign<U>
+            + From<SmallIntegers>
+            + Sub<U, Output = U>
+            + SubAssign<U>
+            + From<T>,
+    {
+        JacobiBasisPolynomial::<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U> {
+            coeffs: core::array::from_fn(|idx| self.coeffs[idx].clone().into()),
+        }
+    }
+}
+
+impl<
+        const N: usize,
+        const TWICE_ALPHA_PLUS_OFFSET: usize,
+        const TWICE_BETA_PLUS_OFFSET: usize,
+        T,
     > FundamentalTheorem<T>
     for JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
 where

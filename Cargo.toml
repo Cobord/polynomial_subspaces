@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bezier-rs = "0.4.0"
-glam = "0.28.0"
+bezier-rs = {version="0.4.0",optional=true}
+glam = {version="0.28.0", optional=true}
+fast_polynomial = "0.1.0"
 
 [features]
 GADT = []
+pade = []
+bezier = ["dep:bezier-rs", "dep:glam"]

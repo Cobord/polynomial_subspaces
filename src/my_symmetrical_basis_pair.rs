@@ -1,6 +1,7 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::marker::PhantomData;
 
+#[cfg(feature = "bezier")]
 use bezier_rs::Bezier;
 
 use crate::{
@@ -34,6 +35,7 @@ where
 /// Bezier curves go to two SymmetricBasisPolynomial's where the real numbers are being used as f64
 /// and we only need at most 4 coefficients because we are only interested in up to cubic Bezier's
 /// so we can constrain the const generic there to be only 4
+#[cfg(feature = "bezier")]
 impl From<Bezier> for TwoPolynomials<f64, SymmetricalBasisPolynomial<4, f64>> {
     fn from(value: Bezier) -> Self {
         let p0 = value.start;
@@ -825,6 +827,39 @@ where
         sure_will_cancel: bool,
     ) -> Option<Self> {
         self.try_product(rhs, zero_pred, sure_will_cancel)
+    }
+}
+
+impl<const N: usize, T> SymmetricalBasisPolynomial<N, T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + DivAssign<T>,
+{
+    #[allow(dead_code)]
+    fn base_change<U>(self) -> SymmetricalBasisPolynomial<N, U>
+    where
+        U: Clone
+            + Neg<Output = U>
+            + AddAssign<U>
+            + Add<U, Output = U>
+            + Mul<U, Output = U>
+            + MulAssign<U>
+            + From<SmallIntegers>
+            + Sub<U, Output = U>
+            + SubAssign<U>
+            + From<T>,
+    {
+        SymmetricalBasisPolynomial::<N, U> {
+            coeffs: core::array::from_fn(|idx| self.coeffs[idx].clone().into()),
+        }
     }
 }
 

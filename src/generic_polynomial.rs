@@ -1,5 +1,4 @@
-use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::ops::DivAssign;
+use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub type DegreeType = u8;
 pub type SmallIntegers = i8;
@@ -30,6 +29,7 @@ pub enum MonomialError {
 // provides the painfulness to make aware of that happening
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub enum PointSpecifier<T> {
     NegOne,
     Zero,
@@ -76,20 +76,22 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         surely_fits: bool,
     ) -> Result<Self, MonomialError>;
-    #[allow(dead_code)]
     fn evaluate_at(&self, t: T) -> T;
     fn evaluate_at_zero(&self) -> T;
-    #[allow(dead_code)]
     fn evaluate_at_one(&self) -> T;
-    #[allow(dead_code)]
     fn evaluate_at_neg_one(&self) -> T;
+
     #[allow(dead_code)]
     fn is_zero_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
+
     #[allow(dead_code)]
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
+
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType>;
+
     #[allow(dead_code)]
     fn differentiate(self) -> Result<Self, DifferentiateError>;
+
     /// take the product of these two polynomials
     /// the type of Self constrains the allowed terms
     /// if sure_will_cancel then even if we seem to be breaking those constraints

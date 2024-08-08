@@ -9,6 +9,7 @@ use crate::generic_polynomial::{
     cubic_solve, quadratic_solve, quartic_solve, DegreeType, DifferentiateError, FindZeroError,
     FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
 };
+#[repr(transparent)]
 pub struct MonomialBasisPolynomial<T>
 where
     T: Clone
@@ -231,6 +232,43 @@ where
             }
         };
         Ok((constant_term, linear_term))
+    }
+}
+
+impl<T> MonomialBasisPolynomial<T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + DivAssign<T>,
+{
+    #[allow(dead_code)]
+    fn base_change<U>(self) -> MonomialBasisPolynomial<U>
+    where
+        U: Clone
+            + Neg<Output = U>
+            + AddAssign<U>
+            + Add<U, Output = U>
+            + Mul<U, Output = U>
+            + MulAssign<U>
+            + From<SmallIntegers>
+            + Sub<U, Output = U>
+            + SubAssign<U>
+            + From<T>,
+    {
+        MonomialBasisPolynomial::<U> {
+            coeffs: self
+                .coeffs
+                .into_iter()
+                .map(|(degree, z)| (degree, z.into()))
+                .collect(),
+        }
     }
 }
 

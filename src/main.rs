@@ -1,21 +1,29 @@
 #![cfg_attr(feature = "GADT", feature(generic_const_exprs))]
 
+#[cfg(feature = "bezier")]
 use bezier_rs::Bezier;
+
+mod dense_ordinary_polynomial;
 mod generic_polynomial;
 mod jacobi;
 mod my_symmetrical_basis_pair;
 mod ordinary_polynomial;
 
+#[cfg(feature = "pade")]
+mod pade;
+
 fn main() {
-    let b = Bezier::from_linear_coordinates(0.0, -1.0, 5.0, 5.0);
-    let z = b.roots();
-    println!("{:?}", z[0]);
-    println!("{:?}", z[1]);
-    let b = Bezier::from_cubic_coordinates(0.0, -1.0, 5.0, 5.0, 3.0, 4.0, -7.0, -4.0);
-    let z = b.roots();
-    println!("{:?}", z[0]);
-    println!("{:?}", z[1]);
-    println!("Hello, world!");
+    #[cfg(feature = "bezier")]
+    {
+        let b = Bezier::from_linear_coordinates(0.0, -1.0, 5.0, 5.0);
+        let z = b.roots();
+        println!("{:?}", z[0]);
+        println!("{:?}", z[1]);
+        let b = Bezier::from_cubic_coordinates(0.0, -1.0, 5.0, 5.0, 3.0, 4.0, -7.0, -4.0);
+        let z = b.roots();
+        println!("{:?}", z[0]);
+        println!("{:?}", z[1]);
+    }
 }
 
 mod test {
