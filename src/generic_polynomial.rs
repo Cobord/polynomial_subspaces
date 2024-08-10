@@ -80,15 +80,27 @@ where
         + Sub<T, Output = T>,
 {
     fn create_zero_poly() -> Self;
+    
     fn create_monomial(
         degree: DegreeType,
         zero_pred: &impl Fn(&T) -> bool,
         surely_fits: bool,
     ) -> Result<Self, MonomialError>;
+    
     fn evaluate_at(&self, t: T) -> T;
-    fn evaluate_at_zero(&self) -> T;
-    fn evaluate_at_one(&self) -> T;
-    fn evaluate_at_neg_one(&self) -> T;
+
+    /// override these because there is likely a better evaluation method for these special points
+    fn evaluate_at_zero(&self) -> T {
+        self.evaluate_at(0.into())
+    }
+    /// override these because there is likely a better evaluation method for these special points
+    fn evaluate_at_one(&self) -> T {
+        self.evaluate_at(1.into())
+    }
+    /// override these because there is likely a better evaluation method for these special points
+    fn evaluate_at_neg_one(&self) -> T {
+        self.evaluate_at((-1).into())
+    }
 
     #[allow(dead_code)]
     fn is_zero_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
