@@ -747,7 +747,7 @@ where
         }
         if N % 2 == 1 {
             let mut to_add = self.coeffs[N - 1].clone();
-            to_add += self.coeffs[N - 1].clone() * t.clone();
+            to_add -= self.coeffs[N - 1].clone() * t.clone();
             to_add *= cur_power_of_s.clone();
             answer += to_add;
         }
@@ -765,7 +765,23 @@ where
 
     #[allow(dead_code)]
     fn evaluate_at_neg_one(&self) -> T {
-        self.evaluate_at((-1).into())
+        let mut cur_power_of_s: T = 1.into();
+        let mut answer: T = 0.into();
+        for term in self.coeffs.chunks_exact(2) {
+            let mut to_add = term[0].clone() * 2.into();
+            // term[0]*(1-(-1))+term[1]*(-1) = term[0]*2 - term[1]
+            to_add -= term[1].clone();
+            to_add *= cur_power_of_s.clone();
+            answer += to_add;
+            cur_power_of_s *= 2.into();
+            cur_power_of_s = -cur_power_of_s;
+        }
+        if N % 2 == 1 {
+            let mut to_add = self.coeffs[N - 1].clone() * 2.into();
+            to_add *= cur_power_of_s.clone();
+            answer += to_add;
+        }
+        answer
     }
 
     #[allow(dead_code)]
