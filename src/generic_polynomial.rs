@@ -80,13 +80,13 @@ where
         + Sub<T, Output = T>,
 {
     fn create_zero_poly() -> Self;
-    
+
     fn create_monomial(
         degree: DegreeType,
         zero_pred: &impl Fn(&T) -> bool,
         surely_fits: bool,
     ) -> Result<Self, MonomialError>;
-    
+
     fn evaluate_at(&self, t: T) -> T;
 
     /// override these because there is likely a better evaluation method for these special points

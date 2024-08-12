@@ -382,8 +382,7 @@ where
         }
         if n == 5 {
             let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
-                2 => (-8).into(),
-                3 => (-18).into(),
+                3 => (-2).into(),
                 4 => 5.into(),
                 5 => 5.into(),
                 _ => 0.into(),
@@ -1440,10 +1439,7 @@ mod test {
             expected.coeffs
         );
         // derivative of t*s*2=t^3*(1-2t+t^2)=t^3-2*t^4+t^5
-        // 3t^2 -8t + 5t^4
-        let t_to_one = SymmetricalBasisPolynomial::<6, f64> {
-            coeffs: [0., 1., 0., 0., 0., 0.],
-        };
+        // 3t^2 -8t^3 + 5t^4
         let t_squared = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., -1., -1., 0., 0.],
         };
@@ -1453,8 +1449,12 @@ mod test {
         let t_fourth = t_cubed
             .multiply_by_t(true, &|z| z.abs() < 0.000001)
             .unwrap();
+        assert_eq!(t_fourth.coeffs, [0.,1.,-1.,-3.,1.,1.]);
+        let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
+            coeffs: [0., 1., -1., -2., 0., 0.],
+        };
         let expected: SymmetricalBasisPolynomial<6, f64> =
-            t_fourth * 5. - t_to_one * 8. + t_squared * 3.;
+            t_fourth * 5. - t_cubed * 8. + t_squared * 3.;
         assert_eq!(
             SymmetricalBasisPolynomial::<6, f64>::differentiate_single(5).coeffs,
             expected.coeffs
