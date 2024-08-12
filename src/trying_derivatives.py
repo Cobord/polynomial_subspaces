@@ -20,3 +20,18 @@ if __name__ == '__main__':
     for idx in range(6):
         solution = solve(to_solve-dterms[idx],basis_coeffs,dict=True)
         print(solution)
+    terms.append((1-t)*s**3)
+    terms.append(t*s**3)
+    print(expand(diff(terms[6],t)))
+    dterms.append(diff(terms[6],t))
+    dterms.append(diff(terms[7],t))
+    basis_coeffs = symbols("a b c d e f g h")
+    to_solve = sum((basis_coeffs[idx]*terms[idx] for idx in range(8)))
+    solution = solve(to_solve-dterms[6],basis_coeffs,dict=True)[0]
+    print(solution)
+    solution_expanded = sum((solution[basis_coeffs[idx]]*terms[idx] for idx in range(8)))
+    print(solution_expanded)
+    print(expand(solution_expanded))
+    print(expand(diff(terms[6],t)))
+    print(terms[6])
+    print(expand(terms[6]))

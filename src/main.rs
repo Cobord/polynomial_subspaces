@@ -120,9 +120,9 @@ mod test {
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         use crate::ordinary_polynomial::MonomialBasisPolynomial;
         let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
-        const HOW_MANY_SYM_BASIS: usize = 6;
-        const DEGREE_HANDLEABLE: DegreeType = 5;
-        const EXPECT_MESSAGE: &str = "For degrees <= 5, 6 symmetric basis coefficients are enough";
+        const HOW_MANY_SYM_BASIS: usize = 10;
+        const DEGREE_HANDLEABLE: DegreeType = 9;
+        const EXPECT_MESSAGE: &str = "For degrees <= 9, 10 symmetric basis coefficients are enough";
         for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)

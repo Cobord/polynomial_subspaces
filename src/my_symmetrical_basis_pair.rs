@@ -1347,7 +1347,7 @@ mod test {
     }
 
     #[test]
-    fn test_differentiate_single() {
+    fn test_differentiate_single_small() {
         use super::SymmetricalBasisPolynomial;
         use crate::generic_polynomial::Generic1DPoly;
         let one = SymmetricalBasisPolynomial::<6, f64> {
@@ -1459,6 +1459,17 @@ mod test {
             SymmetricalBasisPolynomial::<6, f64>::differentiate_single(5).coeffs,
             expected.coeffs
         );
+    }
+
+    #[test]
+    fn test_differentiate_single_nonhardcoded() {
+        use super::SymmetricalBasisPolynomial;
+        //use crate::generic_polynomial::Generic1DPoly;
+        let diff_6 = SymmetricalBasisPolynomial::<10, f64>::differentiate_single(6);
+        let expected_diff_6 = SymmetricalBasisPolynomial::<10, f64> {
+            coeffs: [0., 0., 0., 0., 3., 0., -7., -7., 0., 0.],
+        };
+        assert_eq!(diff_6.coeffs, expected_diff_6.coeffs);
     }
 
     // different order of computation so the errors for accurately running tests
