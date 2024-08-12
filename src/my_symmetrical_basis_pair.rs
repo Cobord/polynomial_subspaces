@@ -410,10 +410,10 @@ where
         // Term 1 +-1   t^s_power*(1-t)^s_power
         if n % 2 == 0 {
             answer.coeffs[where_one_minus_t_s_k] -= 1.into();
-            answer.coeffs[where_one_minus_t_s_k] -= 1.into();
+            answer.coeffs[where_one_minus_t_s_k + 1] -= 1.into();
         } else {
             answer.coeffs[where_one_minus_t_s_k] += 1.into();
-            answer.coeffs[where_one_minus_t_s_k] += 1.into();
+            answer.coeffs[where_one_minus_t_s_k + 1] += 1.into();
         }
         // Term 2 ?*s_power*(1-t)*    t^(s_power-1)*(1-t)^(s_power-1)
         let shift_for_s_power_minus_1 = (s_power - 1) << 1;
@@ -450,7 +450,7 @@ where
         answer
     }
 
-    const fn product_goes_01(
+    pub(crate) const fn product_goes_01(
         idx_is_zero: bool,
         jdx_is_zero: bool,
     ) -> Result<usize, (usize, usize)> {
@@ -1465,6 +1465,8 @@ mod test {
     fn test_differentiate_single_nonhardcoded() {
         use super::SymmetricalBasisPolynomial;
         //use crate::generic_polynomial::Generic1DPoly;
+        let diff_6 = SymmetricalBasisPolynomial::<10, f64>::differentiate_single_hardcoded(6);
+        assert!(diff_6.is_none());
         let diff_6 = SymmetricalBasisPolynomial::<10, f64>::differentiate_single(6);
         let expected_diff_6 = SymmetricalBasisPolynomial::<10, f64> {
             coeffs: [0., 0., 0., 0., 3., 0., -7., -7., 0., 0.],

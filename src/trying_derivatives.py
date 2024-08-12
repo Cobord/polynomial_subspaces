@@ -35,3 +35,11 @@ if __name__ == '__main__':
     print(expand(diff(terms[6],t)))
     print(terms[6])
     print(expand(terms[6]))
+
+    print("Here")
+    print(expand(terms[6] - (1-t)*s**3))
+    diff_6_0 = -s**3
+    diff_6_1 = 3*(1-t)*(1-t)*s**2
+    diff_6_2 = -3*(1-t)*t*s**2
+    print(expand(diff_6_0+diff_6_1+diff_6_2))
+    print(expand(dterms[6]))

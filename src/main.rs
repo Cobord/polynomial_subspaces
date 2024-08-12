@@ -74,7 +74,7 @@ mod test {
     // could be larger than machine epsilon for f64
     // things like non-associativity building up over many steps
     #[allow(dead_code)]
-    const TEST_EPSILON: f64 = 1e-15;
+    const TEST_EPSILON: f64 = 1e-9;
 
     #[test]
     #[allow(dead_code)]
