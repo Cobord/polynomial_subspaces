@@ -1469,28 +1469,34 @@ mod test {
 
     #[test]
     #[allow(dead_code)]
-    fn multiply_by_t() {
-        use crate::generic_polynomial::Generic1DPoly;
+    fn monomial_multiply_by_t() {
+        use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
-        for degree in 0..10 {
-            let in_sym_basis = SymmetricalBasisPolynomial::<6, f64>::create_monomial(
-                degree,
-                &zero_float,
-                degree < 6,
-            );
-            if degree >= 6 {
+        const HOW_MANY_SYM_BASIS: usize = 10;
+        const DEGREE_HANDLEABLE: DegreeType = 9;
+        const EXPECT_MESSAGE: &str = "For degrees <= 9, 10 symmetric basis coefficients are enough";
+        const EXPECT_MESSAGE_2 : &str = "If degree+1 <= 9, then there should be no problem multiplying t^degree by t to get t^(degree+1)";
+        for degree in 0..DEGREE_HANDLEABLE + 5 {
+            let in_sym_basis =
+                SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
+                    degree,
+                    &zero_float,
+                    degree <= DEGREE_HANDLEABLE,
+                );
+            if degree > DEGREE_HANDLEABLE {
                 assert!(in_sym_basis.is_err());
             } else {
-                let real_in_sym_basis = in_sym_basis
-                    .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
-                let after_mul_t = real_in_sym_basis.clone().multiply_by_t(false, &zero_float);
+                let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
+                let after_mul_t = real_in_sym_basis
+                    .clone()
+                    .multiply_by_t(degree + 1 <= DEGREE_HANDLEABLE, &zero_float);
                 if after_mul_t.is_none() {
-                    if degree > 3 {
+                    if degree + 1 > DEGREE_HANDLEABLE {
                         break;
                     }
                 }
-                let after_mul_t = after_mul_t.unwrap();
+                let after_mul_t = after_mul_t.expect(EXPECT_MESSAGE_2);
                 for t_point in [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.] {
                     let without_t_factor = real_in_sym_basis.evaluate_at(t_point);
                     let with_t_factor = after_mul_t.evaluate_at(t_point);

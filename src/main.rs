@@ -80,24 +80,27 @@ mod test {
     #[allow(dead_code)]
     fn monomials_match() {
         use crate::generic_polynomial::test_same_polynomial;
-        use crate::generic_polynomial::Generic1DPoly;
+        use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         use crate::ordinary_polynomial::MonomialBasisPolynomial;
         let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
-        for degree in 0..10 {
+        const HOW_MANY_SYM_BASIS: usize = 9;
+        const DEGREE_HANDLEABLE: DegreeType = 7;
+        const EXPECT_MESSAGE: &str = "For degrees <= 7, 9 symmetric basis coefficients are enough, can't do 8 without the 10th, once have 10th then can do 8 and 9";
+        for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)
                     .expect("No out of const size for these");
-            let in_sym_basis = SymmetricalBasisPolynomial::<6, f64>::create_monomial(
-                degree,
-                &zero_float,
-                degree < 6,
-            );
-            if degree >= 6 {
+            let in_sym_basis =
+                SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
+                    degree,
+                    &zero_float,
+                    degree <= DEGREE_HANDLEABLE,
+                );
+            if degree > DEGREE_HANDLEABLE {
                 assert!(in_sym_basis.is_err());
             } else {
-                let real_in_sym_basis = in_sym_basis
-                    .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
+                let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
                 test_same_polynomial(
                     in_ordinary,
                     real_in_sym_basis,
@@ -113,35 +116,33 @@ mod test {
     #[allow(dead_code)]
     fn monomial_derivatives_match() {
         use crate::generic_polynomial::test_same_polynomial;
-        use crate::generic_polynomial::Generic1DPoly;
+        use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         use crate::ordinary_polynomial::MonomialBasisPolynomial;
         let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
-        for degree in 0..10 {
+        const HOW_MANY_SYM_BASIS: usize = 6;
+        const DEGREE_HANDLEABLE: DegreeType = 5;
+        const EXPECT_MESSAGE: &str = "For degrees <= 5, 6 symmetric basis coefficients are enough";
+        for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)
                     .expect("No out of const size for these");
-            println!("{:?}", in_ordinary.coeffs);
             let in_ordinary = in_ordinary
                 .differentiate()
                 .expect("this can be differentiated without issue");
-            println!("{:?}", in_ordinary.coeffs);
-            let in_sym_basis = SymmetricalBasisPolynomial::<6, f64>::create_monomial(
-                degree,
-                &zero_float,
-                degree < 6,
-            );
-            if degree >= 6 {
+            let in_sym_basis =
+                SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
+                    degree,
+                    &zero_float,
+                    degree <= DEGREE_HANDLEABLE,
+                );
+            if degree > DEGREE_HANDLEABLE {
                 assert!(in_sym_basis.is_err());
             } else {
-                let real_in_sym_basis = in_sym_basis
-                    .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
-                println!("function using sym {:?}", real_in_sym_basis.coeffs);
+                let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
                 let real_in_sym_basis = real_in_sym_basis
                     .differentiate()
                     .expect("this can be differentiated without issue");
-                println!("derivative using ordinary {:?}", in_ordinary.coeffs);
-                println!("derivative using sym {:?}", real_in_sym_basis.coeffs);
                 test_same_polynomial(
                     in_ordinary,
                     real_in_sym_basis,
