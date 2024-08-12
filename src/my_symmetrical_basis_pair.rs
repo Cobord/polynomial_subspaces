@@ -1449,7 +1449,7 @@ mod test {
         let t_fourth = t_cubed
             .multiply_by_t(true, &|z| z.abs() < 0.000001)
             .unwrap();
-        assert_eq!(t_fourth.coeffs, [0.,1.,-1.,-3.,1.,1.]);
+        assert_eq!(t_fourth.coeffs, [0., 1., -1., -3., 1., 1.]);
         let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., -1., -2., 0., 0.],
         };

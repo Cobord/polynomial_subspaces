@@ -40,13 +40,16 @@ fn main() {
                 .differentiate()
                 .expect("this can be differentiated without issue");
             println!("{:?}", in_ordinary.coeffs);
-            let in_sym_basis =
-                SymmetricalBasisPolynomial::<6, f64>::create_monomial(degree, &zero_float, degree < 6);
+            let in_sym_basis = SymmetricalBasisPolynomial::<6, f64>::create_monomial(
+                degree,
+                &zero_float,
+                degree < 6,
+            );
             if degree >= 6 {
                 assert!(in_sym_basis.is_err());
             } else {
-                let real_in_sym_basis =
-                    in_sym_basis.expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
+                let real_in_sym_basis = in_sym_basis
+                    .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
                 println!("function using sym {:?}", real_in_sym_basis.coeffs);
                 let real_in_sym_basis = real_in_sym_basis
                     .differentiate()
