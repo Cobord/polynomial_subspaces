@@ -4,11 +4,13 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{
-    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
-    Generic1DPoly, MonomialError, SmallIntegers, SubspaceError,
+    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError
 };
 
 #[allow(dead_code)]
+/// 2alpha+1 >= 0 so 2alpha>=-1, alpha>=-1/2
+/// and it is a half-integer
+/// if we want alpha/beta=-1 as well, then we need to change this to 2
 const OFFSET: usize = 1;
 
 /// store the coefficients of J^{alpha,beta}_0,J^{alpha,beta}_1 ... in that order
@@ -51,6 +53,67 @@ where
         todo!();
     }
 
+    /// Gamma(alpha+1), Gamma(beta+1) and Gamma(alpha+beta+1)
+    const fn gamma_alphabeta_one() -> (T,T,T) {
+        todo!()
+    }
+
+    const fn useful_alpha_beta_combinations() -> (usize,bool) {
+        let mut floor_alpha_plus_beta_plus_1 = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
+        // extra_one_half when alpha+beta is a half-integer and not an integer
+        // in particular they can't be equal
+        let extra_one_half = floor_alpha_plus_beta_plus_1 % 2 == 1;
+        floor_alpha_plus_beta_plus_1 /= 2;
+        if OFFSET < 1 {
+            floor_alpha_plus_beta_plus_1 += 1 - OFFSET;
+        } else if OFFSET > 1 {
+            panic!("getting negative answer here");
+        }
+        (floor_alpha_plus_beta_plus_1, extra_one_half)
+    }
+
+    fn more_useful_alpha_beta_combinations() -> (T,T,T)
+    where 
+        T : DivAssign<T>
+        + From<SmallIntegers>
+    {
+        let alpha_plus_one : T = {
+            let two_alpha : SmallIntegers = if TWICE_ALPHA_PLUS_OFFSET > OFFSET {
+                (TWICE_ALPHA_PLUS_OFFSET - OFFSET) as SmallIntegers
+            } else {
+                -((OFFSET - TWICE_ALPHA_PLUS_OFFSET) as SmallIntegers)
+            };
+            let mut to_return : T = two_alpha.into();
+            to_return /= 2.into();
+            to_return += 1.into();
+            to_return
+        };
+        let beta_plus_one : T = {
+            let two_beta : SmallIntegers = if TWICE_BETA_PLUS_OFFSET > OFFSET {
+                (TWICE_BETA_PLUS_OFFSET - OFFSET) as SmallIntegers
+            } else {
+                -((OFFSET - TWICE_BETA_PLUS_OFFSET) as SmallIntegers)
+            };
+            let mut to_return : T = two_beta.into();
+            to_return /= 2.into();
+            to_return += 1.into();
+            to_return
+        };
+        let (floor_alpha_plus_beta_plus_1,extra_one_half) = Self::useful_alpha_beta_combinations();
+        let alpha_beta_plus_one : T = {
+            if extra_one_half {
+                let mut to_return = (floor_alpha_plus_beta_plus_1 as SmallIntegers).into();
+                let mut one_half : T = 1.into();
+                one_half /= 2.into();
+                to_return += one_half;
+                to_return
+            } else {
+                (floor_alpha_plus_beta_plus_1 as SmallIntegers).into()
+            }
+        };
+        (alpha_plus_one,beta_plus_one,alpha_beta_plus_one)
+    }
+
     #[allow(dead_code)]
     fn base_change<U>(
         self,
@@ -90,7 +153,8 @@ where
         + From<SmallIntegers>
         + Sub<Output = T>
         + SubAssign<T>
-        + DivAssign<T>,
+        + DivAssign<T>
+        + PartialEq<T>,
 {
     fn create_zero_poly() -> Self {
         Self {
@@ -116,8 +180,8 @@ where
         if N == 1 {
             return self.evaluate_at_one();
         }
-        // TODO
-        // also this assumes that t is a real number
+        // TODO use the recurrence relation instead
+        // also below assumes that t is a real number
         let mut answer: T = 0.into();
         let mut half_t_minus_one = t.clone() - 1.into();
         half_t_minus_one /= 2.into();
@@ -131,6 +195,9 @@ where
             let mut s_power: T = 1.into();
             let mut n_minus_s_power: T = starting_n_minus_s_power.clone();
             starting_n_minus_s_power *= half_t_plus_one.clone();
+            if *cur_coeff == 0.into() {
+                continue;
+            }
             for s in 0..=which_pn {
                 let n_minus_s = which_pn - s;
                 let offset_plus_twice_quantity_n_plus_alpha =
@@ -164,6 +231,9 @@ where
             .iter()
             .enumerate()
             .fold(0.into(), |acc, (n, coeff)| {
+                if *coeff == 0.into() {
+                    return acc;
+                }
                 let offset_plus_two_times_quantity_n_plus_alpha = 2 * n + TWICE_ALPHA_PLUS_OFFSET;
                 let nth_contrib: T =
                     { self.binomial_helper(offset_plus_two_times_quantity_n_plus_alpha, n) };
@@ -177,6 +247,9 @@ where
             .iter()
             .enumerate()
             .fold(0.into(), |acc, (n, coeff)| {
+                if *coeff == 0.into() {
+                    return acc;
+                }
                 let offset_plus_two_times_quantity_n_plus_beta = 2 * n + TWICE_BETA_PLUS_OFFSET;
                 let nth_contrib: T = {
                     let mut to_return =
@@ -215,7 +288,7 @@ where
     /// derivatives are nicely expressed with different alpha and beta
     /// not the same alpha and beta
     fn differentiate(self) -> Result<Self, DifferentiateError> {
-        let my_degree = self.polynomial_degree(&|_| false);
+        let my_degree = self.polynomial_degree(&|z| *z==0.into());
         if my_degree.is_none() {
             return Ok(Self::create_zero_poly());
         }
@@ -225,7 +298,7 @@ where
         }
         if my_degree == 2 {
             let mut one_poly =
-                Self::create_monomial(1, &|_| false, true).expect("creating 1 is no problem");
+                Self::create_monomial(1, &|z| *z==0.into(), true).expect("creating 1 is no problem");
             let derivative_constant: T = {
                 let twice_alpha_beta_offset = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
                 let mut alpha_plus_beta_plus_2 = (twice_alpha_beta_offset as SmallIntegers).into();
@@ -236,6 +309,7 @@ where
                 to_return
             };
             one_poly *= derivative_constant;
+            one_poly *= self.coeffs[1].clone();
             return Ok(one_poly);
         }
         Err(DifferentiateError::CantComputeDerivative)
@@ -338,7 +412,8 @@ where
         + From<SmallIntegers>
         + Sub<Output = T>
         + SubAssign<T>
-        + DivAssign<T>,
+        + DivAssign<T>
+        + PartialEq<T>,
 {
     fn find_zeros(
         &self,
@@ -631,7 +706,8 @@ where
         + From<SmallIntegers>
         + Sub<Output = T>
         + SubAssign<T>
-        + DivAssign<T>,
+        + DivAssign<T>
+        + PartialEq<T>,
 {
     type Output = Self;
 
@@ -642,8 +718,89 @@ where
     }
 }
 
+impl<
+        const N: usize,
+        const TWICE_ALPHA_PLUS_OFFSET: usize,
+        const TWICE_BETA_PLUS_OFFSET: usize,
+        T,
+    > InnerProductSubspace<T> for JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + DivAssign<T>
+        + PartialEq<T>,
+{
+    fn are_basis_vectors_orthogonal(_up_to: BasisIndexingType, _zero_pred: &impl Fn(&T) -> bool) -> Result<bool, SubspaceError> {
+        Ok(true)
+    }
+    
+    #[allow(unreachable_code)]
+    fn inner_product(&self, rhs: &Self) -> T {
+        let mut answer : T = 0.into();
+
+        let (floor_alpha_plus_beta_plus_1, extra_one_half) : (usize,bool) = Self::useful_alpha_beta_combinations();
+        let (alpha_plus_one,beta_plus_one,alpha_beta_plus_one) = Self::more_useful_alpha_beta_combinations();
+
+        let two_to_alpha_beta_one : T = {
+            if extra_one_half {
+                todo!()
+            } else {
+                if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
+                    return (1<<floor_alpha_plus_beta_plus_1).into();
+                }
+                let mut to_return = 1.into();
+                for _ in 1..floor_alpha_plus_beta_plus_1 {
+                    to_return *= 2.into();
+                }
+                to_return
+            }
+        };
+        let (mut gamma_n_alpha_one, mut gamma_n_beta_one, mut gamma_n_alpha_beta_one)= Self::gamma_alphabeta_one();
+        let mut two_n_alpha_beta_one : T = alpha_beta_plus_one.clone();
+        let mut gamma_n_one : T = 1.into();
+        for (idx,(self_coeff,rhs_coeff)) in self.coeffs.iter().zip(rhs.coeffs.iter()).enumerate() {
+            if *self_coeff == 0.into() || *rhs_coeff == 0.into() {
+                // before it was gamma(idx+alpha+1)
+                // want it to be gamma(idx+1+alpha+1) after
+                gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_plus_one.clone();
+                gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers)+ beta_plus_one.clone();
+                gamma_n_alpha_beta_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_beta_plus_one.clone();
+                gamma_n_one *= ((idx + 1) as SmallIntegers).into();
+                two_n_alpha_beta_one += 2.into();
+                continue;
+            }
+            let mut contribution : T = 1.into();
+            contribution *= gamma_n_alpha_one.clone();
+            contribution *= gamma_n_beta_one.clone();
+            contribution /= gamma_n_alpha_beta_one.clone();
+            contribution /= gamma_n_one.clone();
+            contribution /= two_n_alpha_beta_one.clone();
+            contribution *= self_coeff.clone();
+            contribution *= rhs_coeff.clone();
+            answer += contribution;
+
+            gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_plus_one.clone();
+            gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers)+ beta_plus_one.clone();
+            gamma_n_alpha_beta_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_beta_plus_one.clone();
+            gamma_n_one *= ((idx + 1) as SmallIntegers).into();
+            two_n_alpha_beta_one += 2.into();
+        }
+        answer *= two_to_alpha_beta_one;
+        answer
+    }
+}
+
 // alpha = beta = Galpha - 1/2
 // twice_alpha_plus_offset = 2*Galpha
+/// not normalized in the same way, coefficients of J^{Galpha-1/2,Galpha-1/2}_n (x) rather than C_n^{Galpha}(x)
+/// so all the coefficients will be changed by factors relating these two for each n
 #[allow(dead_code)]
 pub type GegenbauerBasisPolynomial<const N: usize, const TWICE_GALPHA: usize, T> =
     JacobiBasisPolynomial<N, TWICE_GALPHA, TWICE_GALPHA, T>;
