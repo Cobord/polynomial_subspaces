@@ -43,6 +43,34 @@ where
         + Sub<Output = T>
         + SubAssign,
 {
+    /// given offset+2(n+alpha) and n
+    /// compute binom(n+alpha,n)
+    /// reason not just giving n+alpha is because that might be a half integer or negative
+    /// but with the offset and multiplication, it is natural number
+    fn binomial_helper(&self, _offset_plus_two_times_quantity_n_plus_alpha: usize, _n: usize) -> T {
+        todo!();
+    }
+
+    #[allow(dead_code)]
+    fn base_change<U>(
+        self,
+    ) -> JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U>
+    where
+        U: Clone
+            + Neg<Output = U>
+            + AddAssign<U>
+            + Add<U, Output = U>
+            + Mul<U, Output = U>
+            + MulAssign<U>
+            + From<SmallIntegers>
+            + Sub<U, Output = U>
+            + SubAssign<U>
+            + From<T>,
+    {
+        JacobiBasisPolynomial::<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U> {
+            coeffs: core::array::from_fn(|idx| self.coeffs[idx].clone().into()),
+        }
+    }
 }
 
 impl<
@@ -96,9 +124,8 @@ where
             .enumerate()
             .fold(0.into(), |acc, (n, coeff)| {
                 let offset_plus_two_times_quantity_n_plus_alpha = 2 * n + TWICE_ALPHA_PLUS_OFFSET;
-                let nth_contrib: T = {
-                    todo!();
-                };
+                let nth_contrib: T =
+                    { self.binomial_helper(offset_plus_two_times_quantity_n_plus_alpha, n) };
                 acc + (nth_contrib * coeff.clone())
             })
     }
@@ -112,7 +139,12 @@ where
             .fold(0.into(), |acc, (n, coeff)| {
                 let offset_plus_two_times_quantity_n_plus_beta = 2 * n + TWICE_BETA_PLUS_OFFSET;
                 let nth_contrib: T = {
-                    todo!();
+                    let mut to_return =
+                        self.binomial_helper(offset_plus_two_times_quantity_n_plus_beta, n);
+                    if n % 2 != 0 {
+                        to_return = -to_return;
+                    }
+                    to_return
                 };
                 if n % 2 == 0 {
                     acc + (nth_contrib * coeff.clone())
@@ -206,26 +238,6 @@ where
         + SubAssign<T>
         + DivAssign<T>,
 {
-    #[allow(dead_code)]
-    fn base_change<U>(
-        self,
-    ) -> JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U>
-    where
-        U: Clone
-            + Neg<Output = U>
-            + AddAssign<U>
-            + Add<U, Output = U>
-            + Mul<U, Output = U>
-            + MulAssign<U>
-            + From<SmallIntegers>
-            + Sub<U, Output = U>
-            + SubAssign<U>
-            + From<T>,
-    {
-        JacobiBasisPolynomial::<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U> {
-            coeffs: core::array::from_fn(|idx| self.coeffs[idx].clone().into()),
-        }
-    }
 }
 
 impl<
