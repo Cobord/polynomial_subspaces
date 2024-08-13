@@ -212,6 +212,7 @@ where
     ) -> Result<Vec<(T, usize)>, FindZeroError>;
 }
 
+//#[cfg(feature="orthogonal")]
 pub trait InnerProductSubspace<T>: Generic1DPoly<T>
 where
     T: Clone
@@ -226,7 +227,7 @@ where
     fn inner_product(&self, rhs: &Self) -> T;
 
     #[allow(dead_code)]
-    fn against_one(&self) -> Result<T,MonomialError> {
+    fn against_one(&self) -> Result<T, MonomialError> {
         let one_poly = Self::create_monomial(1, &|_| false, false)?;
         Ok(self.inner_product(&one_poly))
     }
@@ -234,10 +235,13 @@ where
     #[allow(dead_code)]
     /// if already know this, don't have to do this double checking
     /// and can just return Ok(true) immediately when overriding this
-    fn are_basis_vectors_orthogonal(up_to: BasisIndexingType, zero_pred: &impl Fn(&T) -> bool) -> Result<bool, SubspaceError> {
+    fn are_basis_vectors_orthogonal(
+        up_to: BasisIndexingType,
+        zero_pred: &impl Fn(&T) -> bool,
+    ) -> Result<bool, SubspaceError> {
         let basis_vectors = Self::all_basis_vectors(up_to)?;
-        for (idx,basis_vector_idx) in basis_vectors.iter().enumerate() {
-            for basis_vector_jdx in basis_vectors.iter().skip(idx+1) {
+        for (idx, basis_vector_idx) in basis_vectors.iter().enumerate() {
+            for basis_vector_jdx in basis_vectors.iter().skip(idx + 1) {
                 if !zero_pred(&basis_vector_idx.inner_product(basis_vector_jdx)) {
                     return Ok(false);
                 }

@@ -4,7 +4,8 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::generic_polynomial::{
-    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError
+    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
+    Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError,
 };
 
 #[allow(dead_code)]
@@ -53,57 +54,122 @@ where
         todo!();
     }
 
-    /// Gamma(alpha+1), Gamma(beta+1) and Gamma(alpha+beta+1)
-    const fn gamma_alphabeta_one() -> (T,T,T) {
-        todo!()
+    /// Gamma(x)
+    /// but provide 2x so it is a natural number
+    fn gamma(_two_x: usize, _sqrt_pi: Option<T>) -> Option<T> {
+        todo!();
     }
 
-    const fn useful_alpha_beta_combinations() -> (usize,bool) {
+    /// Gamma(alpha+1), Gamma(beta+1) and Gamma(alpha+beta+1)
+    /// the last one can be infinite for alpha=beta=-1/2
+    /// the into and loop prevent this from being const
+    /// but it should be thought of as such
+    fn gamma_alpha_beta_one(sqrt_pi: Option<T>) -> (T, T, Option<T>) {
+        let (mut floor_alpha_plus_beta_plus_1, extra_one_half) =
+            Self::useful_alpha_beta_combinations();
+        let third_return = if !extra_one_half {
+            if floor_alpha_plus_beta_plus_1 == 0 {
+                None
+            } else if floor_alpha_plus_beta_plus_1 == 1 {
+                Some(1.into())
+            } else {
+                floor_alpha_plus_beta_plus_1 -= 1;
+                let mut answer: T = (floor_alpha_plus_beta_plus_1 as SmallIntegers).into();
+                while floor_alpha_plus_beta_plus_1 > 1 {
+                    floor_alpha_plus_beta_plus_1 -= 1;
+                    answer *= (floor_alpha_plus_beta_plus_1 as SmallIntegers).into();
+                }
+                Some(answer)
+            }
+        } else {
+            todo!();
+        };
+        let first_return = Self::gamma(Self::two_alphabeta_plus_2(true), sqrt_pi.clone())
+            .expect("alpha+1>0 so never doing Gamma(0) here");
+        let second_return = Self::gamma(Self::two_alphabeta_plus_2(false), sqrt_pi)
+            .expect("beta+1>0 so never doing Gamma(0) here");
+        (first_return, second_return, third_return)
+    }
+
+    /// Gamma(alpha+beta+2)
+    fn gamma_alpha_beta_two(_sqrt_pi: Option<T>) -> T {
+        todo!();
+    }
+
+    // either 2*alpha+2 or 2*beta+2
+    const fn two_alphabeta_plus_2(do_alpha: bool) -> usize {
+        let mut two_gamma_plus_two = if do_alpha {
+            TWICE_ALPHA_PLUS_OFFSET
+        } else {
+            TWICE_BETA_PLUS_OFFSET
+        };
+        let whichever_doing = if do_alpha {
+            TWICE_ALPHA_PLUS_OFFSET
+        } else {
+            TWICE_BETA_PLUS_OFFSET
+        };
+        if whichever_doing + 2 >= OFFSET {
+            two_gamma_plus_two += 2;
+            two_gamma_plus_two -= OFFSET;
+        } else {
+            panic!();
+        }
+        two_gamma_plus_two
+    }
+
+    /// alpha + beta + 1 which is a nonnegative half integer
+    /// because alpha,beta>=-1/2
+    const fn useful_alpha_beta_combinations() -> (usize, bool) {
         let mut floor_alpha_plus_beta_plus_1 = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
         // extra_one_half when alpha+beta is a half-integer and not an integer
         // in particular they can't be equal
         let extra_one_half = floor_alpha_plus_beta_plus_1 % 2 == 1;
         floor_alpha_plus_beta_plus_1 /= 2;
-        if OFFSET < 1 {
+        if OFFSET <= 1 {
             floor_alpha_plus_beta_plus_1 += 1 - OFFSET;
-        } else if OFFSET > 1 {
+        } else if floor_alpha_plus_beta_plus_1 + 1 >= OFFSET {
+            floor_alpha_plus_beta_plus_1 += 1;
+            floor_alpha_plus_beta_plus_1 -= OFFSET;
+        } else {
             panic!("getting negative answer here");
         }
         (floor_alpha_plus_beta_plus_1, extra_one_half)
     }
 
-    fn more_useful_alpha_beta_combinations() -> (T,T,T)
-    where 
-        T : DivAssign<T>
-        + From<SmallIntegers>
+    /// alpha + 1 , beta + 1 and alpha + beta + 1
+    /// the into prevent this from being const
+    /// but it should be thought of as such
+    fn more_useful_alpha_beta_combinations() -> (T, T, T)
+    where
+        T: DivAssign<T> + From<SmallIntegers>,
     {
-        let alpha_plus_one : T = {
-            let two_alpha : SmallIntegers = if TWICE_ALPHA_PLUS_OFFSET > OFFSET {
+        let alpha_plus_one: T = {
+            let two_alpha: SmallIntegers = if TWICE_ALPHA_PLUS_OFFSET > OFFSET {
                 (TWICE_ALPHA_PLUS_OFFSET - OFFSET) as SmallIntegers
             } else {
                 -((OFFSET - TWICE_ALPHA_PLUS_OFFSET) as SmallIntegers)
             };
-            let mut to_return : T = two_alpha.into();
+            let mut to_return: T = two_alpha.into();
             to_return /= 2.into();
             to_return += 1.into();
             to_return
         };
-        let beta_plus_one : T = {
-            let two_beta : SmallIntegers = if TWICE_BETA_PLUS_OFFSET > OFFSET {
+        let beta_plus_one: T = {
+            let two_beta: SmallIntegers = if TWICE_BETA_PLUS_OFFSET > OFFSET {
                 (TWICE_BETA_PLUS_OFFSET - OFFSET) as SmallIntegers
             } else {
                 -((OFFSET - TWICE_BETA_PLUS_OFFSET) as SmallIntegers)
             };
-            let mut to_return : T = two_beta.into();
+            let mut to_return: T = two_beta.into();
             to_return /= 2.into();
             to_return += 1.into();
             to_return
         };
-        let (floor_alpha_plus_beta_plus_1,extra_one_half) = Self::useful_alpha_beta_combinations();
-        let alpha_beta_plus_one : T = {
+        let (floor_alpha_plus_beta_plus_1, extra_one_half) = Self::useful_alpha_beta_combinations();
+        let alpha_beta_plus_one: T = {
             if extra_one_half {
                 let mut to_return = (floor_alpha_plus_beta_plus_1 as SmallIntegers).into();
-                let mut one_half : T = 1.into();
+                let mut one_half: T = 1.into();
                 one_half /= 2.into();
                 to_return += one_half;
                 to_return
@@ -111,7 +177,7 @@ where
                 (floor_alpha_plus_beta_plus_1 as SmallIntegers).into()
             }
         };
-        (alpha_plus_one,beta_plus_one,alpha_beta_plus_one)
+        (alpha_plus_one, beta_plus_one, alpha_beta_plus_one)
     }
 
     #[allow(dead_code)]
@@ -288,7 +354,7 @@ where
     /// derivatives are nicely expressed with different alpha and beta
     /// not the same alpha and beta
     fn differentiate(self) -> Result<Self, DifferentiateError> {
-        let my_degree = self.polynomial_degree(&|z| *z==0.into());
+        let my_degree = self.polynomial_degree(&|z| *z == 0.into());
         if my_degree.is_none() {
             return Ok(Self::create_zero_poly());
         }
@@ -297,8 +363,8 @@ where
             return Ok(Self::create_zero_poly());
         }
         if my_degree == 2 {
-            let mut one_poly =
-                Self::create_monomial(1, &|z| *z==0.into(), true).expect("creating 1 is no problem");
+            let mut one_poly = Self::create_monomial(1, &|z| *z == 0.into(), true)
+                .expect("creating 1 is no problem");
             let derivative_constant: T = {
                 let twice_alpha_beta_offset = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
                 let mut alpha_plus_beta_plus_2 = (twice_alpha_beta_offset as SmallIntegers).into();
@@ -723,7 +789,8 @@ impl<
         const TWICE_ALPHA_PLUS_OFFSET: usize,
         const TWICE_BETA_PLUS_OFFSET: usize,
         T,
-    > InnerProductSubspace<T> for JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
+    > InnerProductSubspace<T>
+    for JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, T>
 where
     T: Clone
         + Neg<Output = T>
@@ -737,30 +804,38 @@ where
         + DivAssign<T>
         + PartialEq<T>,
 {
-    fn are_basis_vectors_orthogonal(_up_to: BasisIndexingType, _zero_pred: &impl Fn(&T) -> bool) -> Result<bool, SubspaceError> {
+    fn are_basis_vectors_orthogonal(
+        _up_to: BasisIndexingType,
+        _zero_pred: &impl Fn(&T) -> bool,
+    ) -> Result<bool, SubspaceError> {
         Ok(true)
     }
-    
+
     #[allow(unreachable_code)]
     fn inner_product(&self, rhs: &Self) -> T {
-        let mut answer : T = 0.into();
+        if N == 0 {
+            return 0.into();
+        }
+        let mut answer: T = 0.into();
 
-        let (floor_alpha_plus_beta_plus_1, extra_one_half) : (usize,bool) = Self::useful_alpha_beta_combinations();
-        let (alpha_plus_one,beta_plus_one,alpha_beta_plus_one) = Self::more_useful_alpha_beta_combinations();
+        let (floor_alpha_plus_beta_plus_1, extra_one_half): (usize, bool) =
+            Self::useful_alpha_beta_combinations();
+        let (alpha_plus_one, beta_plus_one, alpha_beta_plus_one) =
+            Self::more_useful_alpha_beta_combinations();
 
-        let two_to_alpha_beta_one : T = {
+        let two_to_alpha_beta_one: T = {
             if extra_one_half {
                 if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
-                    return (1<<floor_alpha_plus_beta_plus_1).into();
+                    return (1 << floor_alpha_plus_beta_plus_1).into();
                 }
-                let mut to_return : T = 1.into();
+                let mut to_return: T = 1.into();
                 for _ in 1..floor_alpha_plus_beta_plus_1 {
                     to_return *= 2.into();
                 }
                 todo!("multiply to_return by another sqrt(2) as in type T");
             } else {
                 if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
-                    return (1<<floor_alpha_plus_beta_plus_1).into();
+                    return (1 << floor_alpha_plus_beta_plus_1).into();
                 }
                 let mut to_return = 1.into();
                 for _ in 1..floor_alpha_plus_beta_plus_1 {
@@ -769,21 +844,73 @@ where
                 to_return
             }
         };
-        let (mut gamma_n_alpha_one, mut gamma_n_beta_one, mut gamma_n_alpha_beta_one)= Self::gamma_alphabeta_one();
-        let mut two_n_alpha_beta_one : T = alpha_beta_plus_one.clone();
-        let mut gamma_n_one : T = 1.into();
-        for (idx,(self_coeff,rhs_coeff)) in self.coeffs.iter().zip(rhs.coeffs.iter()).enumerate() {
+        let (gamma_alpha_one, gamma_beta_one, gamma_alpha_beta_one_pre) =
+            Self::gamma_alpha_beta_one(None);
+        let alpha_beta_one: T = alpha_beta_plus_one.clone();
+
+        let (
+            mut gamma_n_alpha_beta_one,
+            mut gamma_n_alpha_one,
+            mut gamma_n_beta_one,
+            mut gamma_n_one,
+            mut two_n_alpha_beta_one,
+            do_skip,
+        ): (T, T, T, T, T, bool) = match gamma_alpha_beta_one_pre {
+            Some(gamma_alpha_beta_one) => (
+                gamma_alpha_beta_one,
+                gamma_alpha_one,
+                gamma_beta_one,
+                1.into(),
+                alpha_beta_one,
+                false,
+            ),
+            None => {
+                // when alpha=beta=-1/2 we must cancel
+                // the 0 from 2*n+alpha+beta+1
+                // the infinity from Gamma(alpha+beta+1) = Gamma(0)
+                // so we take special care of the 0th term then continue the loop after skipping 1
+                if self.coeffs[0] != 0.into() && rhs.coeffs[0] != 0.into() {
+                    let mut contribution: T = gamma_alpha_one.clone();
+                    contribution *= gamma_beta_one.clone();
+                    contribution *= self.coeffs[0].clone();
+                    contribution *= rhs.coeffs[0].clone();
+                    answer += contribution;
+                }
+
+                let gamma_1_alpha_one = gamma_alpha_one * alpha_plus_one.clone();
+                let gamma_1_beta_one = gamma_beta_one * beta_plus_one.clone();
+                let two_1_alpha_beta_one = 2.into();
+                let gamma_1_alpha_beta_one = Self::gamma_alpha_beta_two(None);
+                (
+                    gamma_1_alpha_beta_one,
+                    gamma_1_alpha_one,
+                    gamma_1_beta_one,
+                    1.into(),
+                    two_1_alpha_beta_one,
+                    true,
+                )
+            }
+        };
+
+        for (idx, (self_coeff, rhs_coeff)) in self
+            .coeffs
+            .iter()
+            .zip(rhs.coeffs.iter())
+            .enumerate()
+            .skip(if do_skip { 1 } else { 0 })
+        {
             if *self_coeff == 0.into() || *rhs_coeff == 0.into() {
                 // before it was gamma(idx+alpha+1)
                 // want it to be gamma(idx+1+alpha+1) after
-                gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_plus_one.clone();
-                gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers)+ beta_plus_one.clone();
-                gamma_n_alpha_beta_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_beta_plus_one.clone();
+                gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers) + alpha_plus_one.clone();
+                gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers) + beta_plus_one.clone();
+                gamma_n_alpha_beta_one *=
+                    Into::<T>::into(idx as SmallIntegers) + alpha_beta_plus_one.clone();
                 gamma_n_one *= ((idx + 1) as SmallIntegers).into();
                 two_n_alpha_beta_one += 2.into();
                 continue;
             }
-            let mut contribution : T = 1.into();
+            let mut contribution: T = 1.into();
             contribution *= gamma_n_alpha_one.clone();
             contribution *= gamma_n_beta_one.clone();
             contribution /= gamma_n_alpha_beta_one.clone();
@@ -793,9 +920,10 @@ where
             contribution *= rhs_coeff.clone();
             answer += contribution;
 
-            gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_plus_one.clone();
-            gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers)+ beta_plus_one.clone();
-            gamma_n_alpha_beta_one *= Into::<T>::into(idx as SmallIntegers)+ alpha_beta_plus_one.clone();
+            gamma_n_alpha_one *= Into::<T>::into(idx as SmallIntegers) + alpha_plus_one.clone();
+            gamma_n_beta_one *= Into::<T>::into(idx as SmallIntegers) + beta_plus_one.clone();
+            gamma_n_alpha_beta_one *=
+                Into::<T>::into(idx as SmallIntegers) + alpha_beta_plus_one.clone();
             gamma_n_one *= ((idx + 1) as SmallIntegers).into();
             two_n_alpha_beta_one += 2.into();
         }
@@ -821,3 +949,10 @@ pub type LegendreBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<
 /// so all the coefficients will be changed by these factors
 #[allow(dead_code)]
 pub type ChebyshevBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<N, 0, T>;
+
+mod test {
+    #[test]
+    fn presence() {
+        // just that using jacobi feature
+    }
+}

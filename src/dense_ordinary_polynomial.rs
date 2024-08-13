@@ -116,11 +116,28 @@ where
 
     fn truncating_product(
         &self,
-        _rhs: &Self,
-        _zero_pred: &impl Fn(&T) -> bool,
-        _sure_will_cancel: bool,
+        rhs: &Self,
+        zero_pred: &impl Fn(&T) -> bool,
+        sure_will_cancel: bool,
     ) -> Option<Self> {
-        todo!()
+        let mut coeffs: [T; N] = core::array::from_fn(|_| 0.into());
+        for (degree_1, coeff_1) in self.coeffs.iter().enumerate() {
+            if zero_pred(coeff_1) {
+                continue;
+            }
+            for (degree_2, coeff_2) in rhs.coeffs.iter().enumerate() {
+                if zero_pred(coeff_2) {
+                    continue;
+                }
+                let seek = degree_1 + degree_2;
+                if seek < N {
+                    coeffs[seek] += *coeff_1 * *coeff_2;
+                } else if !sure_will_cancel {
+                    return None;
+                }
+            }
+        }
+        Some(Self { coeffs })
     }
 
     fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError> {
