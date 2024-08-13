@@ -118,26 +118,32 @@ where
         }
         // TODO
         // also this assumes that t is a real number
-        let mut answer : T = 0.into();
+        let mut answer: T = 0.into();
         let mut half_t_minus_one = t.clone() - 1.into();
         half_t_minus_one /= 2.into();
         let mut half_t_plus_one = t.clone() + 1.into();
         half_t_plus_one /= 2.into();
-        let mut two_over_t_plus_one : T = 2.into();
+        let mut two_over_t_plus_one: T = 2.into();
         two_over_t_plus_one /= t + 1.into();
-        let mut starting_n_minus_s_power : T = 1.into();
-        for (which_pn,cur_coeff) in self.coeffs.iter().enumerate() {
-            let mut pn_value : T = 0.into();
-            let mut s_power : T = 1.into();
-            let mut n_minus_s_power : T = starting_n_minus_s_power.clone();
+        let mut starting_n_minus_s_power: T = 1.into();
+        for (which_pn, cur_coeff) in self.coeffs.iter().enumerate() {
+            let mut pn_value: T = 0.into();
+            let mut s_power: T = 1.into();
+            let mut n_minus_s_power: T = starting_n_minus_s_power.clone();
             starting_n_minus_s_power *= half_t_plus_one.clone();
             for s in 0..=which_pn {
                 let n_minus_s = which_pn - s;
-                let offset_plus_twice_quantity_n_plus_alpha = TWICE_ALPHA_PLUS_OFFSET + 2*which_pn;
-                let n_plus_alpha_choose_n_minus_s = self.binomial_helper(offset_plus_twice_quantity_n_plus_alpha, n_minus_s);
-                let offset_plus_twice_quantity_n_plus_beta = TWICE_BETA_PLUS_OFFSET + 2*which_pn;
-                let n_plus_beta_choose_s = self.binomial_helper(offset_plus_twice_quantity_n_plus_beta, s);
-                let s_contrib = n_plus_alpha_choose_n_minus_s * n_plus_beta_choose_s * s_power.clone() * n_minus_s_power.clone();
+                let offset_plus_twice_quantity_n_plus_alpha =
+                    TWICE_ALPHA_PLUS_OFFSET + 2 * which_pn;
+                let n_plus_alpha_choose_n_minus_s =
+                    self.binomial_helper(offset_plus_twice_quantity_n_plus_alpha, n_minus_s);
+                let offset_plus_twice_quantity_n_plus_beta = TWICE_BETA_PLUS_OFFSET + 2 * which_pn;
+                let n_plus_beta_choose_s =
+                    self.binomial_helper(offset_plus_twice_quantity_n_plus_beta, s);
+                let s_contrib = n_plus_alpha_choose_n_minus_s
+                    * n_plus_beta_choose_s
+                    * s_power.clone()
+                    * n_minus_s_power.clone();
                 s_power *= half_t_minus_one.clone();
                 n_minus_s_power *= two_over_t_plus_one.clone();
                 pn_value += s_contrib;
@@ -211,19 +217,20 @@ where
     fn differentiate(self) -> Result<Self, DifferentiateError> {
         let my_degree = self.polynomial_degree(&|_| false);
         if my_degree.is_none() {
-            return Ok(Self::create_zero_poly())
+            return Ok(Self::create_zero_poly());
         }
         let my_degree = my_degree.unwrap();
         if my_degree == 0 {
-            return Ok(Self::create_zero_poly())
+            return Ok(Self::create_zero_poly());
         }
         if my_degree == 2 {
-            let mut one_poly = Self::create_monomial(1, &|_| false, true).expect("creating 1 is no problem");
-            let derivative_constant : T = {
+            let mut one_poly =
+                Self::create_monomial(1, &|_| false, true).expect("creating 1 is no problem");
+            let derivative_constant: T = {
                 let twice_alpha_beta_offset = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
                 let mut alpha_plus_beta_plus_2 = (twice_alpha_beta_offset as SmallIntegers).into();
                 alpha_plus_beta_plus_2 /= 2.into();
-                alpha_plus_beta_plus_2 += (2-(OFFSET as SmallIntegers)).into();
+                alpha_plus_beta_plus_2 += (2 - (OFFSET as SmallIntegers)).into();
                 let mut to_return = alpha_plus_beta_plus_2;
                 to_return /= 2.into();
                 to_return
@@ -242,24 +249,24 @@ where
     ) -> Option<Self> {
         let my_degree = self.polynomial_degree(zero_pred);
         if my_degree.is_none() {
-            return Some(Self::create_zero_poly())
+            return Some(Self::create_zero_poly());
         }
         let rhs_degree = rhs.polynomial_degree(zero_pred);
         match (my_degree, rhs_degree) {
             (None, None) => Some(Self::create_zero_poly()),
             (None, Some(_)) => Some(Self::create_zero_poly()),
             (Some(_), None) => Some(Self::create_zero_poly()),
-            (Some(x), Some(_)) if x==0 => {
+            (Some(0), Some(_)) => {
                 let mut return_value = rhs.clone();
                 return_value *= self.evaluate_at_zero();
                 Some(return_value)
-            },
-            (Some(_), Some(y)) if y==0 => {
+            }
+            (Some(_), Some(0)) => {
                 let mut return_value = self.clone();
                 return_value *= rhs.evaluate_at_zero();
                 Some(return_value)
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 
@@ -623,7 +630,8 @@ where
         + MulAssign
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign<T>,
+        + SubAssign<T>
+        + DivAssign<T>,
 {
     type Output = Self;
 
