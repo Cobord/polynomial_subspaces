@@ -77,7 +77,6 @@ mod test {
     const TEST_EPSILON: f64 = 1e-9;
 
     #[test]
-    #[allow(dead_code)]
     fn monomials_match() {
         use crate::generic_polynomial::test_same_polynomial;
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};
@@ -113,7 +112,6 @@ mod test {
     }
 
     #[test]
-    #[allow(dead_code)]
     fn monomial_derivatives_match() {
         use crate::generic_polynomial::test_same_polynomial;
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};

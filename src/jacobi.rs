@@ -16,7 +16,6 @@ const OFFSET: usize = 1;
 /// this provides an alternative basis for the vector space of polynomials
 /// alpha is restricted so that TWICE_ALPHA_PLUS_OFFSET is usize and same for beta
 #[repr(transparent)]
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct JacobiBasisPolynomial<
     const N: usize,

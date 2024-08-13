@@ -165,6 +165,7 @@ where
         + Copy
         + PolyNum,
 {
+    #[allow(dead_code)]
     fn find_zeros(
         &self,
         zero_pred: &impl Fn(&T) -> bool,

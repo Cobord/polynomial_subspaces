@@ -393,7 +393,7 @@ where
     }
 
     /// helper do differentiate when a single coefficient is 1 and the rest are 0
-    pub(crate) fn differentiate_single(n: usize) -> Self {
+    fn differentiate_single(n: usize) -> Self {
         let hard_coded = Self::differentiate_single_hardcoded(n);
         if let Some(got_hard_coded) = hard_coded {
             return got_hard_coded;
@@ -450,7 +450,7 @@ where
         answer
     }
 
-    pub(crate) const fn product_goes_01(
+    const fn product_goes_01(
         idx_is_zero: bool,
         jdx_is_zero: bool,
     ) -> Result<usize, (usize, usize)> {
@@ -508,8 +508,7 @@ where
         }
     }
 
-    #[allow(unused_variables, unreachable_code)]
-    pub(crate) fn multiply_by_t(
+    pub fn multiply_by_t(
         self,
         sure_will_cancel: bool,
         zero_pred: &impl Fn(&T) -> bool,
@@ -561,7 +560,6 @@ where
     /// knowing when elements are 0 allows us to avoid multiplications by 0 and additions of 0, etc
     /// sure_will_cancel means even if it looks like coefficients that are not in the first N,
     ///     will be present in the middle of the computation, they will eventually cancel so no need to worry
-    #[allow(dead_code)]
     fn try_product<const M: usize>(
         &self,
         rhs: &SymmetricalBasisPolynomial<M, T>,
@@ -757,12 +755,10 @@ where
         self.coeffs[0].clone()
     }
 
-    #[allow(dead_code)]
     fn evaluate_at_one(&self) -> T {
         self.coeffs[1].clone()
     }
 
-    #[allow(dead_code)]
     fn evaluate_at_neg_one(&self) -> T {
         let mut cur_power_of_s: T = 1.into();
         let mut answer: T = 0.into();
@@ -783,12 +779,10 @@ where
         answer
     }
 
-    #[allow(dead_code)]
     fn is_zero_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
         self.coeffs.iter().all(zero_pred)
     }
 
-    #[allow(dead_code)]
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
         let linear_coeff_truncated = if N == 1 {
             -self.coeffs[0].clone()
@@ -826,7 +820,6 @@ where
         None
     }
 
-    #[allow(dead_code)]
     fn differentiate(self) -> Result<Self, DifferentiateError> {
         if N % 2 == 1 {
             // TODO might not be closed under differentiation
@@ -930,7 +923,6 @@ where
     /// multiplicities
     /// the second term is 1 below the multiplicity
     /// so that we can still use 0 as something meaningful -> 0 is a simple root of multiplicity 1
-    #[allow(dead_code)]
     fn find_zeros(
         &self,
         zero_pred: &impl Fn(&T) -> bool,
@@ -1481,7 +1473,6 @@ mod test {
     const TEST_EPSILON: f64 = f64::EPSILON;
 
     #[test]
-    #[allow(dead_code)]
     fn monomial_multiply_by_t() {
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
