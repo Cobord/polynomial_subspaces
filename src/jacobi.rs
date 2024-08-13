@@ -750,7 +750,14 @@ where
 
         let two_to_alpha_beta_one : T = {
             if extra_one_half {
-                todo!()
+                if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
+                    return (1<<floor_alpha_plus_beta_plus_1).into();
+                }
+                let mut to_return : T = 1.into();
+                for _ in 1..floor_alpha_plus_beta_plus_1 {
+                    to_return *= 2.into();
+                }
+                todo!("multiply to_return by another sqrt(2) as in type T");
             } else {
                 if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
                     return (1<<floor_alpha_plus_beta_plus_1).into();
