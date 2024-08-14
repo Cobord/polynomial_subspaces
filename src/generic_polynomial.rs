@@ -212,7 +212,7 @@ where
     ) -> Result<Vec<(T, usize)>, FindZeroError>;
 }
 
-//#[cfg(feature="orthogonal")]
+#[cfg(feature = "orthogonal")]
 pub trait InnerProductSubspace<T>: Generic1DPoly<T>
 where
     T: Clone

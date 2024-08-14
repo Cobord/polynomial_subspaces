@@ -3,10 +3,13 @@
 /// but we only really ever really ever use them at certain half-integer values
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use crate::{generic_polynomial::{
-    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
-    Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError,
-}, special_numbers::SpecialNumbers};
+use crate::{
+    generic_polynomial::{
+        BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
+        Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError,
+    },
+    special_numbers::SpecialNumbers,
+};
 
 #[allow(dead_code)]
 /// 2alpha+1 >= 0 so 2alpha>=-1, alpha>=-1/2
@@ -39,11 +42,11 @@ where
     T: Clone
         + Neg<Output = T>
         + AddAssign<T>
-        + Add<T,Output = T>
-        + Mul<T,Output = T>
+        + Add<T, Output = T>
+        + Mul<T, Output = T>
         + MulAssign<T>
         + From<SmallIntegers>
-        + Sub<T,Output = T>
+        + Sub<T, Output = T>
         + SubAssign<T>
         + DivAssign<T>
         + SpecialNumbers,
@@ -66,7 +69,7 @@ where
             n => {
                 let mut z = ((n as SmallIntegers) - 2).into();
                 z /= 2.into();
-                Self::gamma(n-2,z)
+                Self::gamma(n - 2, z)
             }
         }
     }
@@ -95,9 +98,9 @@ where
         } else {
             todo!();
         };
-        let first_return = Self::gamma(Self::two_alphabeta_plus_2(true),1.into())
+        let first_return = Self::gamma(Self::two_alphabeta_plus_2(true), 1.into())
             .expect("alpha+1>0 so never doing Gamma(0) here");
-        let second_return = Self::gamma(Self::two_alphabeta_plus_2(false),1.into())
+        let second_return = Self::gamma(Self::two_alphabeta_plus_2(false), 1.into())
             .expect("beta+1>0 so never doing Gamma(0) here");
         (first_return, second_return, third_return)
     }
