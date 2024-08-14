@@ -3,10 +3,10 @@
 /// but we only really ever really ever use them at certain half-integer values
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use crate::generic_polynomial::{
+use crate::{generic_polynomial::{
     BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
     Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError,
-};
+}, special_numbers::SpecialNumbers};
 
 #[allow(dead_code)]
 /// 2alpha+1 >= 0 so 2alpha>=-1, alpha>=-1/2
@@ -38,13 +38,15 @@ impl<
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
-        + Add<Output = T>
-        + Mul<Output = T>
-        + MulAssign
+        + AddAssign<T>
+        + Add<T,Output = T>
+        + Mul<T,Output = T>
+        + MulAssign<T>
         + From<SmallIntegers>
-        + Sub<Output = T>
-        + SubAssign,
+        + Sub<T,Output = T>
+        + SubAssign<T>
+        + DivAssign<T>
+        + SpecialNumbers,
 {
     /// given offset+2(n+alpha) and n
     /// compute binom(n+alpha,n)
@@ -56,15 +58,24 @@ where
 
     /// Gamma(x)
     /// but provide 2x so it is a natural number
-    fn gamma(_two_x: usize, _sqrt_pi: Option<T>) -> Option<T> {
-        todo!();
+    fn gamma(two_x: usize, accumulator: T) -> Option<T> {
+        match two_x {
+            0 => None,
+            1 => Some(T::SQRT_PI * accumulator),
+            2 => Some(accumulator),
+            n => {
+                let mut z = ((n as SmallIntegers) - 2).into();
+                z /= 2.into();
+                Self::gamma(n-2,z)
+            }
+        }
     }
 
     /// Gamma(alpha+1), Gamma(beta+1) and Gamma(alpha+beta+1)
     /// the last one can be infinite for alpha=beta=-1/2
     /// the into and loop prevent this from being const
     /// but it should be thought of as such
-    fn gamma_alpha_beta_one(sqrt_pi: Option<T>) -> (T, T, Option<T>) {
+    fn gamma_alpha_beta_one() -> (T, T, Option<T>) {
         let (mut floor_alpha_plus_beta_plus_1, extra_one_half) =
             Self::useful_alpha_beta_combinations();
         let third_return = if !extra_one_half {
@@ -84,15 +95,15 @@ where
         } else {
             todo!();
         };
-        let first_return = Self::gamma(Self::two_alphabeta_plus_2(true), sqrt_pi.clone())
+        let first_return = Self::gamma(Self::two_alphabeta_plus_2(true),1.into())
             .expect("alpha+1>0 so never doing Gamma(0) here");
-        let second_return = Self::gamma(Self::two_alphabeta_plus_2(false), sqrt_pi)
+        let second_return = Self::gamma(Self::two_alphabeta_plus_2(false),1.into())
             .expect("beta+1>0 so never doing Gamma(0) here");
         (first_return, second_return, third_return)
     }
 
     /// Gamma(alpha+beta+2)
-    fn gamma_alpha_beta_two(_sqrt_pi: Option<T>) -> T {
+    fn gamma_alpha_beta_two() -> T {
         todo!();
     }
 
@@ -220,7 +231,8 @@ where
         + Sub<Output = T>
         + SubAssign<T>
         + DivAssign<T>
-        + PartialEq<T>,
+        + PartialEq<T>
+        + SpecialNumbers,
 {
     fn create_zero_poly() -> Self {
         Self {
@@ -479,7 +491,8 @@ where
         + Sub<Output = T>
         + SubAssign<T>
         + DivAssign<T>
-        + PartialEq<T>,
+        + PartialEq<T>
+        + SpecialNumbers,
 {
     fn find_zeros(
         &self,
@@ -773,7 +786,8 @@ where
         + Sub<Output = T>
         + SubAssign<T>
         + DivAssign<T>
-        + PartialEq<T>,
+        + PartialEq<T>
+        + SpecialNumbers,
 {
     type Output = Self;
 
@@ -802,7 +816,8 @@ where
         + Sub<Output = T>
         + SubAssign<T>
         + DivAssign<T>
-        + PartialEq<T>,
+        + PartialEq<T>
+        + SpecialNumbers,
 {
     fn are_basis_vectors_orthogonal(
         _up_to: BasisIndexingType,
@@ -845,7 +860,7 @@ where
             }
         };
         let (gamma_alpha_one, gamma_beta_one, gamma_alpha_beta_one_pre) =
-            Self::gamma_alpha_beta_one(None);
+            Self::gamma_alpha_beta_one();
         let alpha_beta_one: T = alpha_beta_plus_one.clone();
 
         let (
@@ -880,7 +895,7 @@ where
                 let gamma_1_alpha_one = gamma_alpha_one * alpha_plus_one.clone();
                 let gamma_1_beta_one = gamma_beta_one * beta_plus_one.clone();
                 let two_1_alpha_beta_one = 2.into();
-                let gamma_1_alpha_beta_one = Self::gamma_alpha_beta_two(None);
+                let gamma_1_alpha_beta_one = Self::gamma_alpha_beta_two();
                 (
                     gamma_1_alpha_beta_one,
                     gamma_1_alpha_one,

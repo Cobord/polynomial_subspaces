@@ -6,6 +6,8 @@ use bezier_rs::Bezier;
 mod dense_ordinary_polynomial;
 mod generic_polynomial;
 
+
+mod special_numbers;
 #[cfg(feature = "jacobi")]
 mod jacobi;
 
