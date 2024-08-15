@@ -100,13 +100,14 @@ impl<const N: usize, T> TwoPolynomials<T, SymmetricalBasisPolynomial<N, T>>
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign<T>,
+        + SubAssign<T>
+        + PartialEq<T>,
 {
     #[allow(dead_code)]
     fn dot_generic<const M: usize>(
@@ -287,13 +288,14 @@ impl<const N: usize, T> SymmetricalBasisPolynomial<N, T>
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign,
+        + SubAssign<T>
+        + PartialEq<T>,
 {
     /// with only knowing the const generic N, we can constrain the polynomial degree
     /// as an upper bound, without worrying about if a coefficient was actually 0 or not
@@ -315,7 +317,7 @@ where
     /// with the one after it, but that doesn't exist
     fn reverse(&mut self) {
         if N % 2 == 1 {
-            panic!("Only allowed to reverse in place on even degree polynomials");
+            panic!("Only allowed to reverse in place on polynomials with even number of basis coefficients because they come in pairs for reversal");
         }
         for coeff_pair in self.coeffs.chunks_exact_mut(2) {
             coeff_pair.reverse();
@@ -336,7 +338,6 @@ where
 
     fn differentiate_single_hardcoded(n: usize) -> Option<Self> {
         // hard coded for small n, because those are the ones that are used more often
-        // also because TODO sign error in the full version that haven't tracked down
         if n < 2 {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
                 if idx > 1 {
@@ -684,13 +685,14 @@ impl<const N: usize, T> Generic1DPoly<T> for SymmetricalBasisPolynomial<N, T>
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign,
+        + SubAssign<T>
+        + PartialEq<T>,
 {
     fn create_zero_poly() -> Self {
         let coeffs = core::array::from_fn(|_| 0.into());
@@ -821,8 +823,14 @@ where
     }
 
     fn differentiate(self) -> Result<Self, DifferentiateError> {
-        if N % 2 == 1 {
-            // TODO might not be closed under differentiation
+        if N % 2 == 1 && self.coeffs[N - 1] != 0.into() {
+            // has a term C*(1-t)*s^k with C nonzero
+            // so that it gives a 2k+1 degree polynomial
+            // but we don't have t*s*k and that is needed
+            // for the leading coefficient A of the 2k degree derivative
+            // namely we must have A(1-t)*s^k + A*t*s^k as the top two terms
+            // but t*s^k is not in this subspace
+            return Err(DifferentiateError::NotInTheSpace);
         }
         let mut answer = Self::create_zero_poly();
         for (idx, cur_coeff) in self.coeffs.into_iter().enumerate() {
@@ -910,14 +918,15 @@ impl<const N: usize, T> FundamentalTheorem<T> for SymmetricalBasisPolynomial<N, 
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
         + SubAssign<T>
-        + DivAssign<T>,
+        + DivAssign<T>
+        + PartialEq<T>,
 {
     /// zeros of the polynomial along with their
     /// multiplicities
@@ -1246,13 +1255,14 @@ impl<const N: usize, T> Neg for SymmetricalBasisPolynomial<N, T>
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign<T>,
+        + SubAssign<T>
+        + PartialEq<T>,
 {
     type Output = Self;
 
@@ -1267,13 +1277,14 @@ impl<const N: usize, T> TryFrom<MonomialBasisPolynomial<T>> for SymmetricalBasis
 where
     T: Clone
         + Neg<Output = T>
-        + AddAssign
+        + AddAssign<T>
         + Add<Output = T>
         + Mul<Output = T>
-        + MulAssign
+        + MulAssign<T>
         + From<SmallIntegers>
         + Sub<Output = T>
-        + SubAssign<T>,
+        + SubAssign<T>
+        + PartialEq<T>,
 {
     type Error = MonomialError;
 

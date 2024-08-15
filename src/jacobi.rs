@@ -126,7 +126,11 @@ where
             two_gamma_plus_two += 2;
             two_gamma_plus_two -= OFFSET;
         } else {
-            panic!();
+            if do_alpha {
+                panic!("2*alpha+2 is not a natural number");
+            } else {
+                panic!("2*beta+2 is not a natural number");
+            }
         }
         two_gamma_plus_two
     }
@@ -145,7 +149,7 @@ where
             floor_alpha_plus_beta_plus_1 += 1;
             floor_alpha_plus_beta_plus_1 -= OFFSET;
         } else {
-            panic!("getting negative answer here");
+            panic!("getting negative answer for alpha + beta + 1");
         }
         (floor_alpha_plus_beta_plus_1, extra_one_half)
     }
