@@ -122,6 +122,7 @@ where
         } else {
             TWICE_BETA_PLUS_OFFSET
         };
+        #[allow(clippy::collapsible_else_if)]
         if whichever_doing + 2 >= OFFSET {
             two_gamma_plus_two += 2;
             two_gamma_plus_two -= OFFSET;

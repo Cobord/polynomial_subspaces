@@ -89,6 +89,19 @@ where
 
     fn evaluate_at(&self, t: T) -> T;
 
+    /// override this if there is repeated computation that is common to evaluate
+    /// the polynomial at multiple points
+    #[allow(dead_code)]
+    fn evaluate_at_many<const N: usize>(&self, mut ts: [T; N]) -> [T; N] {
+        #[allow(clippy::needless_range_loop)]
+        for idx in 0..ts.len() {
+            let mut cur_evaluate_point = 0.into();
+            core::mem::swap(&mut cur_evaluate_point, &mut ts[idx]);
+            ts[idx] = self.evaluate_at(cur_evaluate_point);
+        }
+        ts
+    }
+
     /// override these because there is likely a better evaluation method for these special points
     fn evaluate_at_zero(&self) -> T {
         self.evaluate_at(0.into())
