@@ -731,6 +731,40 @@ where
         Ok(answer)
     }
 
+    fn evaluate_at_many<const POINT_COUNT: usize>(&self, ts: [T; POINT_COUNT]) -> [T; POINT_COUNT] {
+        // TODO test this
+        let s_values : [T; POINT_COUNT] = core::array::from_fn(|idx| ts[idx].clone() * (Into::<T>::into(1) - ts[idx].clone()));
+        let mut cur_power_of_s: [T; POINT_COUNT] = core::array::from_fn(|_| 1.into());
+        let mut answers : [T; POINT_COUNT] = core::array::from_fn(|_| 0.into());
+        for term in self.coeffs.chunks_exact(2) {
+            let mut to_add : [T;POINT_COUNT] = core::array::from_fn(|_| term[0].clone());
+            // term[0]*(1-t)+term[1]*t = term[0] + (term[1]-term[0])*t
+            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(|((to_add_idx,ts_idx),cur_power_of_s_idx)| {
+                *to_add_idx += (term[1].clone() - term[0].clone()) * ts_idx.clone();
+                *to_add_idx *= cur_power_of_s_idx.clone();
+            });
+            answers.iter_mut().zip(to_add).for_each(|(cur_answer, to_add_idx)| {
+                *cur_answer += to_add_idx;
+            });
+            cur_power_of_s.iter_mut().zip(&s_values).for_each(|(cur_power_of_s_idx, s_idx)| {
+                *cur_power_of_s_idx *= s_idx.clone();
+            });
+        }
+        if N % 2 == 1 {
+            let mut to_add : [T;POINT_COUNT] = core::array::from_fn(|_| self.coeffs[N-1].clone());
+            // term[0]*(1-t)+term[1]*t = term[0] + (term[1]-term[0])*t
+            
+            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(|((to_add_idx,ts_idx),cur_power_of_s_idx)| {
+                *to_add_idx -= self.coeffs[N-1].clone() * ts_idx.clone();
+                *to_add_idx *= cur_power_of_s_idx.clone();
+            });
+            answers.iter_mut().zip(to_add).for_each(|(cur_answer, to_add_idx)| {
+                *cur_answer += to_add_idx;
+            });
+        }
+        answers
+    }
+
     fn evaluate_at(&self, t: T) -> T {
         let one_t: T = 1.into();
         let s = t.clone() * (one_t - t.clone());

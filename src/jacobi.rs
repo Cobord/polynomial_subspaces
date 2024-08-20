@@ -259,6 +259,10 @@ where
         todo!();
     }
 
+    fn evaluate_at_many<const POINT_COUNT: usize>(&self, mut _ts: [T; POINT_COUNT]) -> [T; POINT_COUNT] {
+        todo!("Can do better when trying to evaluate the same polynomial at many points");
+    }
+
     fn evaluate_at(&self, t: T) -> T {
         if N == 0 {
             return 0.into();
