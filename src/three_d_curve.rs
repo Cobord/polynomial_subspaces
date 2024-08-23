@@ -774,7 +774,7 @@ where
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
-    pub fn intersect_curve(
+    pub fn collision_curve(
         self,
         other: Self,
         zero_pred: &impl Fn(&T) -> bool,
@@ -1019,7 +1019,7 @@ where
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
-    pub fn intersect_curve<const M: usize>(
+    pub fn collision_curve<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
         zero_pred: &impl Fn(&T) -> bool,

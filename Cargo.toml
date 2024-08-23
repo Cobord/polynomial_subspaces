@@ -1,7 +1,10 @@
 [package]
 name = "polynomial_subspaces"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+license = "MIT"
+description = "general ways to deal with subspaces of the polynomial rings R[X] with R some ring"
+repository = "https://github.com/Cobord/PolynomialSubspaces"
 
 [dependencies]
 bezier-rs = {version="0.4.0",optional=true}
