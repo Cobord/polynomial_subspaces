@@ -12,6 +12,7 @@ mod special_numbers;
 
 mod my_symmetrical_basis_pair;
 mod ordinary_polynomial;
+mod three_d_curve;
 mod two_d_curve;
 
 #[cfg(feature = "pade")]
