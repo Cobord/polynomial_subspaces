@@ -27,6 +27,10 @@ One can do the following with a polynomial subspace
  - Add<Self, Output = Self>, AddAssign<Self>,Sub<Self, Output = Self>, SubAssign<Self> for subspace being closed under addition and subtraction
  - MulAssign<R>, Mul<T, Output = Self>, Neg<Output = Self> for multiplication by scalars from the base ring
 
+# Zeros
+
+On such a subspace, we may also implement FundamentalTheorem<R> in reference to the fundamental theorem of algebra. For a subspace which implements this trait we have a find zeros method which either gives the zeros with multiplicities (only the ones within T itself without going to an extension) or a FindZeroError for the cases when the polynomial in question was the zero polynomial or the zeros could not be determined. This would be the case when the Abel-Ruffini unsolvability comes up. In this method, me must provide the square and cube root functions that are needed in the relavant quadratic or Cardano's formulae. They both return options to account for the possibilities that the generic ring R is not algebraically closed/doesn't have cube roots of unity, etc. We don't demnad such a restriction on R in the constraints on the type R when implementing Generic1DPoly<R>. The complicated square root and cube root functions are only as inputs and only relevant if we implement FundamentalTheorem<R>.
+
 # Monomial Basis
 
 ## Dense
@@ -47,7 +51,7 @@ We can consider such a curve with TwoPolynomials<R, P> so we get two polynomials
 
 Because these are vector valued, we can consider their dot products and cross products to get back to single polynomials in the appropriate subspaces.
 
-If we use the GADT flag, then the implementation of the product uses the sum operations on the const generic N which is describing the maximal degree in the subspace. The product then uses compile time operations on these bounds to get the appropriate larger degree.
+If we use the GADT flag, then the implementation of the product uses the sum operations on the const generic N which is describing the maximal degree in the subspace. The product then uses compile time operations on these bounds to get the appropriate larger degree. The GADT flag requires the unstable generic_const_exprs so +nightly if doing that.
 
 If we don't use the GADT flag, then the multiplications of polynomials that happen when doing the cross and dot products are just the truncating product where we just attempt to multiply two elements of the subspace but have an Err return if we are no longer within the subspace.
 
