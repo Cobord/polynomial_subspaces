@@ -1,8 +1,4 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::marker::PhantomData;
-
-#[cfg(feature = "bezier")]
-use bezier_rs::Bezier;
 
 use crate::{
     generic_polynomial::{
@@ -12,267 +8,6 @@ use crate::{
     },
     ordinary_polynomial::MonomialBasisPolynomial,
 };
-
-/// T is the type being used to represent the real numbers
-/// have two polynomials which can be used as functions from T to T
-/// so used for an R -> R^2 curve
-#[allow(dead_code)]
-pub struct TwoPolynomials<T, P: Generic1DPoly<T>>
-where
-    T: Clone
-        + Neg<Output = T>
-        + AddAssign
-        + Add<Output = T>
-        + Mul<Output = T>
-        + MulAssign
-        + From<SmallIntegers>
-        + Sub<Output = T>,
-{
-    x: P,
-    y: P,
-    dummy_t: PhantomData<T>,
-}
-
-/// Bezier curves go to two SymmetricBasisPolynomial's where the real numbers are being used as f64
-/// and we only need at most 4 coefficients because we are only interested in up to cubic Bezier's
-/// so we can constrain the const generic there to be only 4
-#[cfg(feature = "bezier")]
-impl From<Bezier> for TwoPolynomials<f64, SymmetricalBasisPolynomial<4, f64>> {
-    fn from(value: Bezier) -> Self {
-        let p0 = value.start;
-        let pn = value.end;
-        let (x_poly, y_poly) = match value.handles {
-            bezier_rs::BezierHandles::Linear => {
-                // p0.x*(1-t) + pn.x*t
-                let x_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.x, pn.x, 0., 0.],
-                };
-                // p0.y*(1-t) + pn.y*t
-                let y_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.y, pn.y, 0., 0.],
-                };
-                (x_poly, y_poly)
-            }
-            bezier_rs::BezierHandles::Quadratic { handle: p1 } => {
-                // (C)*t + (A)*(1-t) + (-A-C+2*B)*t*(1-t)*t + (-A-C+2*B)*t*(1-t)*(1-t) == A*(1-t)^2 + B*2*t*(1-t) + C*t^2
-                // p0.x*(1-t)^2 + p1.x*2*t*(1-t) + pn.x*t^2
-                //
-                let temp: f64 = 2. * p1.x - (p0.x + pn.x);
-                let x_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.x, pn.x, temp, temp],
-                };
-                let temp: f64 = 2. * p1.y - (p0.y + pn.y);
-                let y_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.y, pn.y, temp, temp],
-                };
-                (x_poly, y_poly)
-            }
-            bezier_rs::BezierHandles::Cubic {
-                handle_start: p1,
-                handle_end: p2,
-            } => {
-                //A*(1-t)^3 + 3*B*t*(1-t)^2 + 3*C*t^2*(1-t)+D*t^3
-                //E*(1-t)+F*t+G*t*(1-t)^2+H*t^2*(1-t)
-                //[{e: a, f: d, g: -2*a + 3*b - d, h: -a + 3*c - 2*d}]
-                let g = 3. * p1.x - 2. * p0.x - pn.x;
-                let h = 3. * p2.x - 2. * pn.x - p0.x;
-                let x_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.x, pn.x, g, h],
-                };
-                let g = 3. * p1.y - 2. * p0.y - pn.y;
-                let h = 3. * p2.y - 2. * pn.y - p0.y;
-                let y_poly = SymmetricalBasisPolynomial {
-                    coeffs: [p0.y, pn.y, g, h],
-                };
-                (x_poly, y_poly)
-            }
-        };
-        TwoPolynomials {
-            x: x_poly,
-            y: y_poly,
-            dummy_t: PhantomData,
-        }
-    }
-}
-
-#[cfg(feature = "GADT")]
-impl<const N: usize, T> TwoPolynomials<T, SymmetricalBasisPolynomial<N, T>>
-where
-    T: Clone
-        + Neg<Output = T>
-        + AddAssign<T>
-        + Add<Output = T>
-        + Mul<Output = T>
-        + MulAssign<T>
-        + From<SmallIntegers>
-        + Sub<Output = T>
-        + SubAssign<T>
-        + PartialEq<T>,
-{
-    #[allow(dead_code)]
-    fn dot_generic<const M: usize>(
-        self,
-        other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
-        zero_pred: &impl Fn(&T) -> bool,
-    ) -> Option<
-        SymmetricalBasisPolynomial<
-            {
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            },
-            T,
-        >,
-    > {
-        let new_self_x = self
-            .x
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_self_y = self
-            .y
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_other_x = other
-            .x
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_other_y = other
-            .y
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-
-        let x1x2 = new_self_x.truncating_product(&new_other_x, zero_pred, true)?;
-        let y1y2 = new_self_y.truncating_product(&new_other_y, zero_pred, true)?;
-        Some(x1x2 + y1y2)
-    }
-
-    #[allow(dead_code)]
-    fn cross_generic<const M: usize>(
-        self,
-        other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
-        zero_pred: &impl Fn(&T) -> bool,
-    ) -> Option<
-        SymmetricalBasisPolynomial<
-            {
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            },
-            T,
-        >,
-    > {
-        let new_self_x = self
-            .x
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_self_y = self
-            .y
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_other_x = other
-            .x
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-        let new_other_y = other
-            .y
-            .try_convert_degree::<{
-                SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
-                    + SymmetricalBasisPolynomial::<M, T>::polynomial_degree_bound()
-                    + 2
-            }>(zero_pred)
-            .ok()?;
-
-        let x1y2 = new_self_x.truncating_product(&new_other_y, zero_pred, true)?;
-        let y1x2 = new_self_y.truncating_product(&new_other_x, zero_pred, true)?;
-        Some(x1y2 - y1x2)
-    }
-}
-
-#[cfg(not(feature = "GADT"))]
-impl<T, P> TwoPolynomials<T, P>
-where
-    T: Clone
-        + Neg<Output = T>
-        + AddAssign
-        + Add<Output = T>
-        + Mul<Output = T>
-        + MulAssign
-        + From<SmallIntegers>
-        + Sub<Output = T>
-        + SubAssign,
-    P: Generic1DPoly<T>,
-{
-    /// taking the pointwise dot product of two of TwoPolynomials gives a single polynomial
-    /// the reason this returns an option instead of always succeeding is because in truncating product
-    /// we don't know if we have the space for all the coefficients we need
-    /// like the P types in TwoPolynomials<T,P> are only allowing cubic polynomials and then when we
-    /// are ending up with something that doesn't fit within those constraints because it is degree 6
-    #[allow(dead_code)]
-    fn dot_generic(
-        self,
-        other: Self,
-        zero_pred: &impl Fn(&T) -> bool,
-        sure_will_cancel: bool,
-    ) -> Option<P> {
-        let x1x2 = self
-            .x
-            .truncating_product(&other.x, zero_pred, sure_will_cancel)?;
-        let y1y2 = self
-            .y
-            .truncating_product(&other.y, zero_pred, sure_will_cancel)?;
-        Some(x1x2 + y1y2)
-    }
-
-    /// taking the pointwise cross product of two of TwoPolynomials gives a single polynomial
-    /// implicitly it is proportional to the missing z-axis
-    /// the reason this returns an option instead of always succeeding is because in truncating product
-    /// we don't know if we have the space for all the coefficients we need
-    /// like the P types in TwoPolynomials<T,P> are only allowing cubic polynomials and then when we
-    /// are ending up with something that doesn't fit within those constraints because it is degree 6
-    #[allow(dead_code)]
-    fn cross_generic(
-        self,
-        other: Self,
-        zero_pred: &impl Fn(&T) -> bool,
-        sure_will_cancel: bool,
-    ) -> Option<P> {
-        let x1y2 = self
-            .x
-            .truncating_product(&other.y, zero_pred, sure_will_cancel)?;
-        let y1x2 = self
-            .y
-            .truncating_product(&other.x, zero_pred, sure_will_cancel)?;
-        Some(x1y2 - y1x2)
-    }
-}
 
 /// store the coefficients of 1-t, t, (1-t)*s^1, t*s^1, (1-t)*s^2, t*s^2, ... in that order
 /// up to N of them
@@ -299,7 +34,7 @@ where
 {
     /// with only knowing the const generic N, we can constrain the polynomial degree
     /// as an upper bound, without worrying about if a coefficient was actually 0 or not
-    const fn polynomial_degree_bound() -> usize {
+    pub(crate) const fn polynomial_degree_bound() -> usize {
         // 1 -> 1-t -> 1
         // 2 -> t,1-t -> 1
         // 3 -> t,1-t,(1-t)^2*t -> 3
@@ -620,7 +355,7 @@ where
     /// or get rid of the 0's on the higher degree basis vectors to truncate to a smaller M
     /// if we are trying to shrink the size, but those terms were not 0, then we get Err(())
     #[allow(dead_code)]
-    fn try_convert_degree<const M: usize>(
+    pub(crate) fn try_convert_degree<const M: usize>(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Result<SymmetricalBasisPolynomial<M, T>, ()> {
@@ -733,34 +468,48 @@ where
 
     fn evaluate_at_many<const POINT_COUNT: usize>(&self, ts: [T; POINT_COUNT]) -> [T; POINT_COUNT] {
         // TODO test this
-        let s_values : [T; POINT_COUNT] = core::array::from_fn(|idx| ts[idx].clone() * (Into::<T>::into(1) - ts[idx].clone()));
+        let s_values: [T; POINT_COUNT] =
+            core::array::from_fn(|idx| ts[idx].clone() * (Into::<T>::into(1) - ts[idx].clone()));
         let mut cur_power_of_s: [T; POINT_COUNT] = core::array::from_fn(|_| 1.into());
-        let mut answers : [T; POINT_COUNT] = core::array::from_fn(|_| 0.into());
+        let mut answers: [T; POINT_COUNT] = core::array::from_fn(|_| 0.into());
         for term in self.coeffs.chunks_exact(2) {
-            let mut to_add : [T;POINT_COUNT] = core::array::from_fn(|_| term[0].clone());
+            let mut to_add: [T; POINT_COUNT] = core::array::from_fn(|_| term[0].clone());
             // term[0]*(1-t)+term[1]*t = term[0] + (term[1]-term[0])*t
-            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(|((to_add_idx,ts_idx),cur_power_of_s_idx)| {
-                *to_add_idx += (term[1].clone() - term[0].clone()) * ts_idx.clone();
-                *to_add_idx *= cur_power_of_s_idx.clone();
-            });
-            answers.iter_mut().zip(to_add).for_each(|(cur_answer, to_add_idx)| {
-                *cur_answer += to_add_idx;
-            });
-            cur_power_of_s.iter_mut().zip(&s_values).for_each(|(cur_power_of_s_idx, s_idx)| {
-                *cur_power_of_s_idx *= s_idx.clone();
-            });
+            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(
+                |((to_add_idx, ts_idx), cur_power_of_s_idx)| {
+                    *to_add_idx += (term[1].clone() - term[0].clone()) * ts_idx.clone();
+                    *to_add_idx *= cur_power_of_s_idx.clone();
+                },
+            );
+            answers
+                .iter_mut()
+                .zip(to_add)
+                .for_each(|(cur_answer, to_add_idx)| {
+                    *cur_answer += to_add_idx;
+                });
+            cur_power_of_s
+                .iter_mut()
+                .zip(&s_values)
+                .for_each(|(cur_power_of_s_idx, s_idx)| {
+                    *cur_power_of_s_idx *= s_idx.clone();
+                });
         }
         if N % 2 == 1 {
-            let mut to_add : [T;POINT_COUNT] = core::array::from_fn(|_| self.coeffs[N-1].clone());
+            let mut to_add: [T; POINT_COUNT] = core::array::from_fn(|_| self.coeffs[N - 1].clone());
             // term[0]*(1-t)+term[1]*t = term[0] + (term[1]-term[0])*t
-            
-            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(|((to_add_idx,ts_idx),cur_power_of_s_idx)| {
-                *to_add_idx -= self.coeffs[N-1].clone() * ts_idx.clone();
-                *to_add_idx *= cur_power_of_s_idx.clone();
-            });
-            answers.iter_mut().zip(to_add).for_each(|(cur_answer, to_add_idx)| {
-                *cur_answer += to_add_idx;
-            });
+
+            to_add.iter_mut().zip(&ts).zip(&cur_power_of_s).for_each(
+                |((to_add_idx, ts_idx), cur_power_of_s_idx)| {
+                    *to_add_idx -= self.coeffs[N - 1].clone() * ts_idx.clone();
+                    *to_add_idx *= cur_power_of_s_idx.clone();
+                },
+            );
+            answers
+                .iter_mut()
+                .zip(to_add)
+                .for_each(|(cur_answer, to_add_idx)| {
+                    *cur_answer += to_add_idx;
+                });
         }
         answers
     }

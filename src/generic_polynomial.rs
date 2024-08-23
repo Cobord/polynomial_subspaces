@@ -92,7 +92,10 @@ where
     /// override this if there is repeated computation that is common to evaluate
     /// the polynomial at multiple points
     #[allow(dead_code)]
-    fn evaluate_at_many<const POINT_COUNT: usize>(&self, mut ts: [T; POINT_COUNT]) -> [T; POINT_COUNT] {
+    fn evaluate_at_many<const POINT_COUNT: usize>(
+        &self,
+        mut ts: [T; POINT_COUNT],
+    ) -> [T; POINT_COUNT] {
         #[allow(clippy::needless_range_loop)]
         for idx in 0..ts.len() {
             let mut cur_evaluate_point = 0.into();
