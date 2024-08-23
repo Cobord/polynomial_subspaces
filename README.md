@@ -55,11 +55,17 @@ If we use the GADT flag, then the implementation of the product uses the sum ope
 
 If we don't use the GADT flag, then the multiplications of polynomials that happen when doing the cross and dot products are just the truncating product where we just attempt to multiply two elements of the subspace but have an Err return if we are no longer within the subspace.
 
+We can ask for the parameter values when the curve is tangent and/or normal to the displacement from a point. In addition we can find those parameter values where one collides with another such curve (not the images of the curves intersecting which would be two independent parameters for each curve). There is also information about the curvature and speed (the name being from the case of R being reals but in general the functions still work though without such interpretability). Whenever dot or cross products are used the relevant caveat about the GADT flag holds.
+
 ## Bezier
 
-This is behind the feature flag of bezier.
+This is behind the feature flag of bezier. Not particularly because of the functionality here but more so because of the dependence on bezier-rs and glam.
 
-If we want this then we can describe a 2d up to cubic Bezier curves with the pairs of polynomials above particularly using the Symmetrical Basis. This provides the conversion from the Bezier of the bezier_rs package which uses the control points rather than the component polynomials. After such a conversion, we can do all the manipulations on TwoPolynomials<R,P> as above.
+If we want this then we can describe a 2d up to cubic Bezier curves with the pairs of polynomials above particularly using the Symmetrical Basis. This provides the conversion from the Bezier of the bezier-rs package which uses the control points rather than the component polynomials. After such a conversion, we can do all the manipulations on TwoPolynomials<R,P> as above.
+
+## 3D Curves
+
+Similarly with curves as interpreted as polynomial maps R -> R^3 (R again not necessarily being the real numbers but the names of some of the functions are in that context). The only difference being the cross product is not a single polynomial implicitly multiplied by a unit z vector. Instead it is a member of the same ThreePolynomials<R,P>. Otherwise the corresponding description of 2D curves carries over mutatis munandi.
 
 # Jacobi
 
