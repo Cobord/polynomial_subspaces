@@ -923,6 +923,99 @@ where
     }
 
     #[allow(dead_code)]
+    /// given a parameterized curve in 3 space
+    /// helper to find the values of the parameter where the
+    /// tangent at that point is in the same direction
+    /// as the displacement vector pointing between the given point
+    /// and the curve
+    fn tangents_to_points(
+        self,
+        point: (T, T, T),
+        zero_pred: &impl Fn(&T) -> bool,
+        my_sqrt: &impl Fn(&T) -> Option<T>,
+        my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
+    ) -> Result<Vec<T>, NormalTangentError>
+    where
+        [(); {
+            SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                + SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                + 2
+        }]:,
+    {
+        let (look_here,displacement,tangent_vecs) = self.clone().possible_tangents_to_points(point.clone(),zero_pred,my_sqrt,my_cube_root)?;
+        let mut final_answer = Vec::with_capacity(look_here.len() >> 3);
+        for t_value in look_here {
+            let (displacement_here_x,displacement_here_y,displacement_here_z) = displacement.evaluate_at(t_value.clone());
+            let (tangent_here_x,tangent_here_y,tangent_here_z) = tangent_vecs.evaluate_at(t_value.clone());
+            let cross_here_x = displacement_here_y.clone()*tangent_here_z.clone() - displacement_here_z.clone()*tangent_here_y.clone();
+            let cross_here_y = displacement_here_z*tangent_here_x.clone() - displacement_here_x.clone()*tangent_here_z;
+            let cross_here_z = displacement_here_x*tangent_here_y - displacement_here_y*tangent_here_x;
+            let fully_zero = zero_pred(&cross_here_x) && zero_pred(&cross_here_y) && zero_pred(&cross_here_z);
+            if fully_zero {
+                final_answer.push(t_value);
+            }
+        }
+        Ok(final_answer)
+    }
+
+    #[allow(dead_code)]
+    /// given a parameterized curve in 3 space
+    /// helper to find the values of the parameter where the
+    /// tangent at that point is in the same direction
+    /// as the displacement vector pointing between the given point
+    /// and the curve
+    /// this just gives points where any one component of the cross product
+    /// of displacement and tangent vector are 0
+    /// the actual parameter values for the final answer will have all
+    /// such components be 0
+    fn possible_tangents_to_points(
+        self,
+        point: (T, T, T),
+        zero_pred: &impl Fn(&T) -> bool,
+        my_sqrt: &impl Fn(&T) -> Option<T>,
+        my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
+    ) -> Result<(Vec<T>,Self,Self), NormalTangentError>
+    where
+        [(); {
+            SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                + SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                + 2
+        }]:,
+    {
+        let displacement: Self = self.clone() - point;
+        let tangent_vecs: Self = self
+            .differentiate()
+            .map_err(NormalTangentError::DifferentiateError)?;
+        let cross_product: ThreePolynomials<
+            T,
+            SymmetricalBasisPolynomial<
+                {
+                    SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                        + SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
+                        + 2
+                },
+                T,
+            >,
+        > = displacement.clone()
+            .cross_generic(tangent_vecs.clone(), zero_pred)
+            .ok_or(NormalTangentError::ProductNotInSubspace)?;
+        let mut final_answer : Vec<T> = Vec::new();
+        if !cross_product.x.is_zero_polynomial(zero_pred) {
+            let zeros_found = cross_product.x.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+        };
+        if !cross_product.y.is_zero_polynomial(zero_pred) {
+            let zeros_found = cross_product.y.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+        };
+        if !cross_product.z.is_zero_polynomial(zero_pred) {
+            let zeros_found = cross_product.z.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+        };
+        Ok((final_answer,displacement,tangent_vecs))
+    }
+
+    #[allow(dead_code)]
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
