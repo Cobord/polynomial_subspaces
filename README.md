@@ -47,7 +47,7 @@ Again there is a const generic which describes how many of these basis vectors w
 
 # 2D Curves
 
-We can consider such a curve with TwoPolynomials<R, P> so we get two polynomials representing the x and y components with both polynomials being in the subspace described by P.
+We can consider such a curve with TwoPolynomials<R, P> so we get two polynomials representing the x and y components with both polynomials being in the subspace described by P. We can do the corresponding operations as on single polynomials that come from operating on each coordinate.
 
 Because these are vector valued, we can consider their dot products and cross products to get back to single polynomials in the appropriate subspaces.
 
@@ -59,7 +59,7 @@ If we don't use the GADT flag, then the multiplications of polynomials that happ
 
 This is behind the feature flag of bezier.
 
-If we want this then we can describe a 2d up to cubic Bezier curves with pairs of polynomials. 
+If we want this then we can describe a 2d up to cubic Bezier curves with the pairs of polynomials above particularly using the Symmetrical Basis. This provides the conversion from the Bezier of the bezier_rs package which uses the control points rather than the component polynomials. After such a conversion, we can do all the manipulations on TwoPolynomials<R,P> as above.
 
 # Jacobi
 
