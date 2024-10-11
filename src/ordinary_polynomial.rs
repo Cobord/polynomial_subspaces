@@ -80,7 +80,7 @@ where
     fn evaluate_at(&self, t: T) -> T {
         let mut answer = 0.into();
         let mut last_power: (DegreeType, T) = (0, 1.into());
-        for term in self.coeffs.iter() {
+        for term in &self.coeffs {
             if 2 * last_power.0 == term.0 {
                 last_power.0 = term.0;
                 last_power.1 *= last_power.1.clone();
@@ -143,13 +143,15 @@ where
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType> {
         self.coeffs
             .iter()
-            .filter_map(|(power, coeff)| {
-                if !zero_pred(coeff) {
-                    Some(*power)
-                } else {
-                    None
-                }
-            })
+            .filter_map(
+                |(power, coeff)| {
+                    if zero_pred(coeff) {
+                        None
+                    } else {
+                        Some(*power)
+                    }
+                },
+            )
             .max()
     }
 
@@ -159,6 +161,7 @@ where
             .iter_mut()
             .enumerate()
             .for_each(|(idx, (degree, coeff))| {
+                #[allow(clippy::cast_possible_wrap)]
                 if *degree > 0 {
                     *coeff *= (*degree as SmallIntegers).into();
                     *degree -= 1;
@@ -183,11 +186,11 @@ where
     ) -> Option<Self> {
         let mut answer: Vec<(DegreeType, T)> =
             Vec::with_capacity(self.coeffs.len() * rhs.coeffs.len());
-        for (degree_1, coeff_1) in self.coeffs.iter() {
+        for (degree_1, coeff_1) in &self.coeffs {
             if zero_pred(coeff_1) {
                 continue;
             }
-            for (degree_2, coeff_2) in rhs.coeffs.iter() {
+            for (degree_2, coeff_2) in &rhs.coeffs {
                 if zero_pred(coeff_2) {
                     continue;
                 }
@@ -344,13 +347,13 @@ where
                 let constant_term = self.evaluate_at_zero();
                 let linear_coeff: T = self.extract_coeff(1);
                 let quadratic_coeff: T = self.extract_coeff(2);
-                quadratic_solve(
+                Ok(quadratic_solve(
                     constant_term,
                     linear_coeff,
                     quadratic_coeff,
                     zero_pred,
                     my_sqrt,
-                )
+                ))
             }
             Some(3) => {
                 let constant_term = self.evaluate_at_zero();

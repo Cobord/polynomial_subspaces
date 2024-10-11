@@ -50,6 +50,7 @@ where
         _surely_fits: bool,
     ) -> Result<Self, MonomialError> {
         let coeffs: [T; N] = core::array::from_fn(|idx| {
+            #[allow(clippy::cast_possible_truncation)]
             if (idx as DegreeType) == degree {
                 1.into()
             } else {
@@ -105,6 +106,7 @@ where
 
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType> {
         for degree in (0..N).rev() {
+            #[allow(clippy::cast_possible_truncation)]
             if !zero_pred(&self.coeffs[degree]) {
                 return Some(degree as DegreeType);
             }
@@ -114,6 +116,7 @@ where
 
     fn differentiate(mut self) -> Result<Self, DifferentiateError> {
         self.coeffs.rotate_left(1);
+        #[allow(clippy::cast_possible_truncation)]
         for idx in 1..(N - 1) {
             self.coeffs[idx] *= ((idx + 1) as SmallIntegers).into();
         }
@@ -211,13 +214,13 @@ where
                 let constant_term = self.evaluate_at_zero();
                 let linear_coeff: T = self.coeffs[1];
                 let quadratic_coeff: T = self.coeffs[2];
-                quadratic_solve(
+                Ok(quadratic_solve(
                     constant_term,
                     linear_coeff,
                     quadratic_coeff,
                     zero_pred,
                     my_sqrt,
-                )
+                ))
             }
             Some(3) => {
                 let constant_term = self.evaluate_at_zero();
@@ -334,9 +337,7 @@ where
         + PolyNum,
 {
     fn add_assign(&mut self, rhs: T) {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
+        assert!(N >= 1, "The zero subspace");
         self.coeffs[0] += rhs;
     }
 }
@@ -376,9 +377,7 @@ where
         + PolyNum,
 {
     fn sub_assign(&mut self, rhs: T) {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
+        assert!(N >= 1, "The zero subspace");
         self.coeffs[0] -= rhs;
     }
 }

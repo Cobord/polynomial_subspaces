@@ -260,7 +260,7 @@ where
         + SubAssign,
     P: Generic1DPoly<T>,
 {
-    /// taking the pointwise norm of ThreePolynomials gives a single polynomial
+    /// taking the pointwise norm of `ThreePolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
     #[allow(dead_code)]
@@ -277,10 +277,10 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
-    /// taking the pointwise dot product of two of ThreePolynomials gives a single polynomial
+    /// taking the pointwise dot product of two of `ThreePolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value)]
     fn dot_generic(
         self,
         other: Self,
@@ -299,10 +299,10 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
-    /// taking the pointwise cross product of two of ThreePolynomials gives another ThreePolynomials
+    /// taking the pointwise cross product of two of `ThreePolynomials` gives another `ThreePolynomials`
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value, clippy::similar_names)]
     fn cross_generic(
         self,
         other: Self,
@@ -642,7 +642,7 @@ where
         )
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value)]
     pub fn linear_approx_poly(
         self,
         around_here: PointSpecifier<T>,
@@ -658,7 +658,7 @@ where
         })
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::many_single_char_names)]
     /// A B C x
     /// D E F y
     /// G H I z
@@ -942,15 +942,26 @@ where
                 + 2
         }]:,
     {
-        let (look_here,displacement,tangent_vecs) = self.clone().possible_tangents_to_points(point.clone(),zero_pred,my_sqrt,my_cube_root)?;
+        let (look_here, displacement, tangent_vecs) = self.clone().possible_tangents_to_points(
+            point.clone(),
+            zero_pred,
+            my_sqrt,
+            my_cube_root,
+        )?;
         let mut final_answer = Vec::with_capacity(look_here.len() >> 3);
         for t_value in look_here {
-            let (displacement_here_x,displacement_here_y,displacement_here_z) = displacement.evaluate_at(t_value.clone());
-            let (tangent_here_x,tangent_here_y,tangent_here_z) = tangent_vecs.evaluate_at(t_value.clone());
-            let cross_here_x = displacement_here_y.clone()*tangent_here_z.clone() - displacement_here_z.clone()*tangent_here_y.clone();
-            let cross_here_y = displacement_here_z*tangent_here_x.clone() - displacement_here_x.clone()*tangent_here_z;
-            let cross_here_z = displacement_here_x*tangent_here_y - displacement_here_y*tangent_here_x;
-            let fully_zero = zero_pred(&cross_here_x) && zero_pred(&cross_here_y) && zero_pred(&cross_here_z);
+            let (displacement_here_x, displacement_here_y, displacement_here_z) =
+                displacement.evaluate_at(t_value.clone());
+            let (tangent_here_x, tangent_here_y, tangent_here_z) =
+                tangent_vecs.evaluate_at(t_value.clone());
+            let cross_here_x = displacement_here_y.clone() * tangent_here_z.clone()
+                - displacement_here_z.clone() * tangent_here_y.clone();
+            let cross_here_y = displacement_here_z * tangent_here_x.clone()
+                - displacement_here_x.clone() * tangent_here_z;
+            let cross_here_z =
+                displacement_here_x * tangent_here_y - displacement_here_y * tangent_here_x;
+            let fully_zero =
+                zero_pred(&cross_here_x) && zero_pred(&cross_here_y) && zero_pred(&cross_here_z);
             if fully_zero {
                 final_answer.push(t_value);
             }
@@ -974,7 +985,7 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
         my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
-    ) -> Result<(Vec<T>,Self,Self), NormalTangentError>
+    ) -> Result<(Vec<T>, Self, Self), NormalTangentError>
     where
         [(); {
             SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound()
@@ -996,23 +1007,33 @@ where
                 },
                 T,
             >,
-        > = displacement.clone()
+        > = displacement
+            .clone()
             .cross_generic(tangent_vecs.clone(), zero_pred)
             .ok_or(NormalTangentError::ProductNotInSubspace)?;
-        let mut final_answer : Vec<T> = Vec::new();
+        let mut final_answer: Vec<T> = Vec::new();
         if !cross_product.x.is_zero_polynomial(zero_pred) {
-            let zeros_found = cross_product.x.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
-            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+            let zeros_found = cross_product
+                .x
+                .find_zeros(zero_pred, my_sqrt, my_cube_root)
+                .map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z, _)| z));
         };
         if !cross_product.y.is_zero_polynomial(zero_pred) {
-            let zeros_found = cross_product.y.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
-            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+            let zeros_found = cross_product
+                .y
+                .find_zeros(zero_pred, my_sqrt, my_cube_root)
+                .map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z, _)| z));
         };
         if !cross_product.z.is_zero_polynomial(zero_pred) {
-            let zeros_found = cross_product.z.find_zeros(zero_pred,my_sqrt,my_cube_root).map_err(NormalTangentError::FindZeroError)?;
-            final_answer.extend(zeros_found.into_iter().map(|(z,_)| z));
+            let zeros_found = cross_product
+                .z
+                .find_zeros(zero_pred, my_sqrt, my_cube_root)
+                .map_err(NormalTangentError::FindZeroError)?;
+            final_answer.extend(zeros_found.into_iter().map(|(z, _)| z));
         };
-        Ok((final_answer,displacement,tangent_vecs))
+        Ok((final_answer, displacement, tangent_vecs))
     }
 
     #[allow(dead_code)]

@@ -51,6 +51,7 @@ where
     /// then the last coefficient should swap
     /// with the one after it, but that doesn't exist
     fn reverse(&mut self) {
+        #[allow(clippy::manual_assert)]
         if N % 2 == 1 {
             panic!("Only allowed to reverse in place on polynomials with even number of basis coefficients because they come in pairs for reversal");
         }
@@ -90,6 +91,7 @@ where
             return Some(Self { coeffs });
         }
         if n == 2 {
+            #[allow(clippy::match_same_arms)]
             let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
                 0 => 1.into(),
                 2 => (-3).into(),
@@ -99,6 +101,7 @@ where
             return Some(Self { coeffs });
         }
         if n == 3 {
+            #[allow(clippy::match_same_arms)]
             let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
                 1 => (-1).into(),
                 2 => (3).into(),
@@ -108,6 +111,7 @@ where
             return Some(Self { coeffs });
         }
         if n == 4 {
+            #[allow(clippy::match_same_arms)]
             let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
                 2 => (2).into(),
                 4 => (-5).into(),
@@ -117,6 +121,7 @@ where
             return Some(Self { coeffs });
         }
         if n == 5 {
+            #[allow(clippy::match_same_arms)]
             let coeffs: [T; N] = core::array::from_fn(|idx| match idx {
                 3 => (-2).into(),
                 4 => 5.into(),
@@ -139,6 +144,7 @@ where
         // Term 2 : ?*s_power*t^(s_power-1)*(1-t)^s_power = ?*s_power*(1-t)*    t^(s_power-1)*(1-t)^(s_power-1)
         // Term 3 : ?*t^s_power*s_power*(-1)*(1-t)^(s_power-1) = -?*s_power*t*   t^(s_power-1)*(1-t)^(s_power-1)
         let s_power = n >> 1;
+        #[allow(clippy::cast_possible_truncation)]
         let s_power_t: T = ((n >> 1) as SmallIntegers).into();
         // index of (1-t)*s^s_power
         let where_one_minus_t_s_k = s_power << 1;
@@ -218,11 +224,12 @@ where
         }
     }
 
-    /// when multiplying the term associated with self.coeffs[idx] and self.coeffs[jdx]
+    /// when multiplying the term associated with `self.coeffs[idx]` and `self.coeffs[jdx]`
     /// the possibilities are either 2 terms in the result or 3 terms
     /// in the Ok case we have two terms both coming with + signs Ok(x) meaning x and x+1
     /// in the Err case we have three terms with the first with a + sign and the other two with - signs
     /// Err((x,y)) meaning x comes with + and y and y+1 come with - sign
+    #[allow(clippy::similar_names)]
     const fn product_goes(idx: usize, jdx: usize) -> Result<usize, (usize, usize)> {
         let power_of_s_idx = idx >> 1;
         let power_of_s_jdx = jdx >> 1;
@@ -294,7 +301,7 @@ where
     /// the product should fit within the first N
     /// this can be done by making sure we pad self with 0's so N is large enough first
     /// knowing when elements are 0 allows us to avoid multiplications by 0 and additions of 0, etc
-    /// sure_will_cancel means even if it looks like coefficients that are not in the first N,
+    /// `sure_will_cancel` means even if it looks like coefficients that are not in the first N,
     ///     will be present in the middle of the computation, they will eventually cancel so no need to worry
     fn try_product<const M: usize>(
         &self,
@@ -386,7 +393,7 @@ where
     }
 
     #[allow(dead_code)]
-    fn pretty_format(&self, variable: String, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
+    fn pretty_format(&self, variable: &str, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
     where
         T: std::fmt::Debug,
     {
@@ -396,19 +403,17 @@ where
             } else {
                 let zeroth_part = format!("({:?})", self.coeffs[idx]);
                 let first_part = if idx % 2 == 0 {
-                    format!("(1 - {})", variable)
+                    format!("(1 - {variable})")
                 } else {
                     variable.to_string()
                 };
                 let s_power = idx >> 1;
                 if s_power == 0 {
-                    format!("{}*{}", zeroth_part, first_part)
+                    format!("{zeroth_part}*{first_part}")
                 } else {
-                    let second_part = format!(
-                        "({}**{})*((1 - {})**{})",
-                        variable, s_power, variable, s_power
-                    );
-                    format!("{}*{}*{}", zeroth_part, first_part, second_part)
+                    let second_part =
+                        format!("({variable}**{s_power})*((1 - {variable})**{s_power})");
+                    format!("{zeroth_part}*{first_part}*{second_part}")
                 }
             }
         });
@@ -580,6 +585,7 @@ where
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType> {
         let mut upper_bound = Self::polynomial_degree_bound();
         if N % 2 == 1 && !zero_pred(&self.coeffs[N - 1]) {
+            #[allow(clippy::cast_possible_truncation)]
             return Some(upper_bound as DegreeType);
         }
         while upper_bound > 1 {
@@ -589,6 +595,7 @@ where
             let b = &self.coeffs[upper_bound - 2];
             let a_zero = zero_pred(a);
             let b_zero = zero_pred(b);
+            #[allow(clippy::cast_possible_truncation)]
             if a_zero && b_zero {
                 upper_bound -= 2;
             } else if a_zero || b_zero {
@@ -640,6 +647,7 @@ where
         let mut answer = Vec::with_capacity(up_to as usize);
         for degree in 0..up_to {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
+                #[allow(clippy::cast_possible_truncation)]
                 if (idx as DegreeType) == (degree as DegreeType) {
                     1.into()
                 } else {
@@ -747,13 +755,13 @@ where
                     self.coeffs[1].clone() - self.coeffs[0].clone() + self.coeffs[2].clone();
                 let quadratic_coeff =
                     -two_t.clone() * self.coeffs[2].clone() + self.coeffs[3].clone();
-                quadratic_solve(
+                Ok(quadratic_solve(
                     constant_term,
                     linear_coeff,
                     quadratic_coeff,
                     zero_pred,
                     my_sqrt,
-                )
+                ))
             }
             Some(3) => {
                 let constant_term = self.evaluate_at_zero();
@@ -837,12 +845,8 @@ where
         + Sub<Output = T>,
 {
     fn sub_assign(&mut self, rhs: T) {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
-        if N < 2 {
-            panic!("The subspace spanned by only (1-t)");
-        }
+        assert!(N >= 1, "The zero subspace");
+        assert!(N >= 2, "The subspace spanned by only (1-t)");
         self.coeffs[0] -= rhs.clone();
         self.coeffs[1] -= rhs.clone();
     }
@@ -861,12 +865,8 @@ where
         + Sub<Output = T>,
 {
     fn add_assign(&mut self, rhs: T) {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
-        if N < 2 {
-            panic!("The subspace spanned by only (1-t)");
-        }
+        assert!(N >= 1, "The zero subspace");
+        assert!(N >= 2, "The subspace spanned by only (1-t)");
         self.coeffs[0] += rhs.clone();
         self.coeffs[1] += rhs.clone();
     }
@@ -884,7 +884,7 @@ where
         + Sub<Output = T>,
 {
     fn mul_assign(&mut self, rhs: T) {
-        for cur_coeff in self.coeffs.iter_mut() {
+        for cur_coeff in &mut self.coeffs {
             *cur_coeff *= rhs.clone();
         }
     }
@@ -921,12 +921,8 @@ where
 {
     type Output = Self;
     fn sub(mut self, rhs: T) -> Self::Output {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
-        if N < 2 {
-            panic!("The subspace spanned by only (1-t)");
-        }
+        assert!(N >= 1, "The zero subspace");
+        assert!(N >= 2, "The subspace spanned by only (1-t)");
         self.coeffs[0] = self.coeffs[0].clone() - rhs.clone();
         self.coeffs[1] = self.coeffs[1].clone() - rhs.clone();
         self
@@ -946,12 +942,8 @@ where
 {
     type Output = Self;
     fn add(mut self, rhs: T) -> Self::Output {
-        if N < 1 {
-            panic!("The zero subspace");
-        }
-        if N < 2 {
-            panic!("The subspace spanned by only (1-t)");
-        }
+        assert!(N >= 1, "The zero subspace");
+        assert!(N >= 2, "The subspace spanned by only (1-t)");
         self.coeffs[0] += rhs.clone();
         self.coeffs[1] += rhs;
         self
@@ -1089,6 +1081,7 @@ where
 
 mod test {
 
+    #[allow(clippy::float_cmp)]
     #[test]
     fn test_product_goes_small() {
         use super::SymmetricalBasisPolynomial;
@@ -1124,15 +1117,14 @@ mod test {
                 assert_eq!(
                     into_poly(current).coeffs,
                     expected_results[idx][jdx].coeffs,
-                    "{} {}",
-                    idx,
-                    jdx
+                    "{idx} {jdx}"
                 );
             }
         }
     }
 
     #[test]
+    #[allow(clippy::float_cmp, clippy::too_many_lines)]
     fn test_differentiate_single_small() {
         use super::SymmetricalBasisPolynomial;
         use crate::generic_polynomial::Generic1DPoly;
@@ -1182,10 +1174,8 @@ mod test {
         };
         let expected: SymmetricalBasisPolynomial<6, f64> = one + t_to_one * (-4.) + t_squared * 3.;
         let diff_2 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(2);
-        let pretty_diff_2 =
-            diff_2.pretty_format("t".to_string(), Some(&|z: &f64| z.abs() < f64::EPSILON));
-        let pretty_expected =
-            expected.pretty_format("t".to_string(), Some(&|z: &f64| z.abs() < f64::EPSILON));
+        let pretty_diff_2 = diff_2.pretty_format("t", Some(&|z: &f64| z.abs() < f64::EPSILON));
+        let pretty_expected = expected.pretty_format("t", Some(&|z: &f64| z.abs() < f64::EPSILON));
         assert_eq!(pretty_expected, pretty_diff_2);
         assert_eq!(diff_2.coeffs, expected.coeffs);
         // derivative of t*s=t^2-t^3
@@ -1213,7 +1203,7 @@ mod test {
             coeffs: [0., 1., -1., -2., 0., 0.],
         };
         let t_fourth = t_cubed
-            .multiply_by_t(true, &|z| z.abs() < 0.000001)
+            .multiply_by_t(true, &|z| z.abs() < 0.000_001)
             .unwrap();
         let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
             coeffs: [0., 1., -1., -2., 0., 0.],
@@ -1233,7 +1223,7 @@ mod test {
             coeffs: [0., 1., -1., -2., 0., 0.],
         };
         let t_fourth = t_cubed
-            .multiply_by_t(true, &|z| z.abs() < 0.000001)
+            .multiply_by_t(true, &|z| z.abs() < 0.000_001)
             .unwrap();
         assert_eq!(t_fourth.coeffs, [0., 1., -1., -3., 1., 1.]);
         let t_cubed = SymmetricalBasisPolynomial::<6, f64> {
@@ -1248,6 +1238,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_differentiate_single_nonhardcoded() {
         use super::SymmetricalBasisPolynomial;
         //use crate::generic_polynomial::Generic1DPoly;
@@ -1270,11 +1261,11 @@ mod test {
     fn monomial_multiply_by_t() {
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
-        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         const HOW_MANY_SYM_BASIS: usize = 10;
         const DEGREE_HANDLEABLE: DegreeType = 9;
         const EXPECT_MESSAGE: &str = "For degrees <= 9, 10 symmetric basis coefficients are enough";
         const EXPECT_MESSAGE_2 : &str = "If degree+1 <= 9, then there should be no problem multiplying t^degree by t to get t^(degree+1)";
+        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_sym_basis =
                 SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
@@ -1286,9 +1277,11 @@ mod test {
                 assert!(in_sym_basis.is_err());
             } else {
                 let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
+                #[allow(clippy::int_plus_one)]
                 let after_mul_t = real_in_sym_basis
                     .clone()
                     .multiply_by_t(degree + 1 <= DEGREE_HANDLEABLE, &zero_float);
+                #[allow(clippy::collapsible_if)]
                 if after_mul_t.is_none() {
                     if degree + 1 > DEGREE_HANDLEABLE {
                         break;
@@ -1323,10 +1316,10 @@ mod test_more {
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         use crate::ordinary_polynomial::MonomialBasisPolynomial;
-        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         const HOW_MANY_SYM_BASIS: usize = 9;
         const DEGREE_HANDLEABLE: DegreeType = 7;
         const EXPECT_MESSAGE: &str = "For degrees <= 7, 9 symmetric basis coefficients are enough, can't do 8 without the 10th, once have 10th then can do 8 and 9";
+        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)
@@ -1358,10 +1351,10 @@ mod test_more {
         use crate::generic_polynomial::{DegreeType, Generic1DPoly};
         use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
         use crate::ordinary_polynomial::MonomialBasisPolynomial;
-        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         const HOW_MANY_SYM_BASIS: usize = 10;
         const DEGREE_HANDLEABLE: DegreeType = 9;
         const EXPECT_MESSAGE: &str = "For degrees <= 9, 10 symmetric basis coefficients are enough";
+        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)

@@ -51,9 +51,9 @@ pub enum PointSpecifier<T> {
 /// the common way this subspace is chosen is if we have some
 /// natural number indexed basis and we demand to only take the
 /// first N of these basis vectors
-/// that is the case with SymmetricalBasisPolynomial<N>
+/// that is the case with `SymmetricalBasisPolynomial<N>`
 /// where the basis is (1-x),x,(1-x)*x,x*s,... with s=x*(1-x)
-/// that is also the case with JacobiBasisPolynomial<N,TWICE_ALPHA_PLUS_OFFSET,TWICE_BETA_PLUS_OFFSET>
+/// that is also the case with `JacobiBasisPolynomial<N,TWICE_ALPHA_PLUS_OFFSET,TWICE_BETA_PLUS_OFFSET>`
 /// where the basis is P^{alpha,beta}_n
 /// similarly for the specializations of alpha and beta to get the other special polynomials
 pub trait Generic1DPoly<T>:
@@ -129,8 +129,8 @@ where
     fn differentiate(self) -> Result<Self, DifferentiateError>;
 
     /// take the product of these two polynomials
-    /// the type of Self constrains the allowed terms
-    /// if sure_will_cancel then even if we seem to be breaking those constraints
+    /// the type of `Self` constrains the allowed terms
+    /// if `sure_will_cancel` then even if we seem to be breaking those constraints
     /// then ignore that problem because we are told it will cancel out and that term
     /// will be 0 anyway
     fn truncating_product(
@@ -150,7 +150,7 @@ where
     }
 
     /// first order approximation around the given point
-    /// see override in ordinary_polynomial for a case
+    /// see override in `ordinary_polynomial` for a case
     /// when can avoid the differentiation
     /// both avoiding that extra work and the potential source of error
     fn linear_approx(self, around_here: PointSpecifier<T>) -> Result<(T, T), DifferentiateError> {
@@ -182,10 +182,10 @@ where
     }
 
     /// assuming there is some natural number indexed basis at work behind the scenes
-    /// give the first up_to of them as long as they are all within this subspace
+    /// give the first `up_to` of them as long as they are all within this subspace
     /// with the cutoff N being some larger natural number
-    /// this can fail when this implicit assumption does not hold in which case NotStoredAsCoefficients
-    /// or the up_to being too large causing us to leave the subspace, NoSuchBasisVector
+    /// this can fail when this implicit assumption does not hold in which case `NotStoredAsCoefficients`
+    /// or the `up_to` being too large causing us to leave the subspace, `NoSuchBasisVector`
     #[allow(dead_code)]
     fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError>;
 
@@ -215,9 +215,9 @@ where
     /// an exact solution could be done in radicals
     /// by Galois considerations
     /// then give those solutions that are within T without needing an extension
-    /// zero_pred is there to determine if a T is 0 or not
-    /// my_sqrt gives the square root if it existed within T without needing an extension
-    /// my_cube_root gives a cube root if it existed within T without needing an extension
+    /// `zero_pred` is there to determine if a T is 0 or not
+    /// `my_sqrt` gives the square root if it existed within T without needing an extension
+    /// `my_cube_root` gives a cube root if it existed within T without needing an extension
     ///     and if applicable a cube root of unity
     #[allow(dead_code)]
     fn find_zeros(
@@ -273,7 +273,7 @@ pub(crate) fn quadratic_solve<T>(
     quadratic_coeff: T,
     zero_pred: &impl Fn(&T) -> bool,
     my_sqrt: &impl Fn(&T) -> Option<T>,
-) -> Result<Vec<(T, usize)>, FindZeroError>
+) -> Vec<(T, usize)>
 where
     T: Clone
         + Neg<Output = T>
@@ -291,7 +291,7 @@ where
     if zero_pred(&discriminant) {
         let mut only_answer = -linear_coeff;
         only_answer /= constant_term * two_t;
-        Ok(vec![(only_answer, 1)])
+        vec![(only_answer, 1)]
     } else {
         #[allow(clippy::collapsible_else_if)]
         if let Some(sqrt_discriminant) = my_sqrt(&discriminant) {
@@ -301,13 +301,14 @@ where
             let mut answer_2 = -linear_coeff;
             answer_2 += sqrt_discriminant;
             answer_2 /= two_a;
-            Ok(vec![(answer_1, 0), (answer_2, 0)])
+            vec![(answer_1, 0), (answer_2, 0)]
         } else {
-            Ok(vec![])
+            vec![]
         }
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 pub(crate) fn cubic_solve<T>(
     _constant_term: T,
     _linear_coeff: T,
@@ -330,7 +331,7 @@ where
     todo!();
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::needless_pass_by_value)]
 pub(crate) fn quartic_solve<T>(
     _constant_term: T,
     _linear_coeff: T,
@@ -354,7 +355,7 @@ where
     todo!();
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, clippy::needless_pass_by_value)]
 pub fn test_same_polynomial<const N: usize, T, P, Q>(
     p: P,
     q: Q,

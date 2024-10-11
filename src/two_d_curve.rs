@@ -31,7 +31,7 @@ where
     dummy_t: PhantomData<T>,
 }
 
-/// Bezier curves go to two SymmetricBasisPolynomial's where the real numbers are being used as f64
+/// Bezier curves go to two `SymmetricBasisPolynomial`'s where the real numbers are being used as f64
 /// and we only need at most 4 coefficients because we are only interested in up to cubic Bezier's
 /// so we can constrain the const generic there to be only 4
 #[cfg(feature = "bezier")]
@@ -258,7 +258,7 @@ where
         + SubAssign,
     P: Generic1DPoly<T>,
 {
-    /// taking the pointwise norm of TwoPolynomials gives a single polynomial
+    /// taking the pointwise norm of `TwoPolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
     #[allow(dead_code)]
@@ -272,12 +272,12 @@ where
         Some(x1x2 + y1y2)
     }
 
-    /// taking the pointwise dot product of two of TwoPolynomials gives a single polynomial
+    /// taking the pointwise dot product of two of `TwoPolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    /// like the P types in TwoPolynomials<T,P> are only allowing cubic polynomials and then when we
+    /// like the P types in `TwoPolynomials<T,P>` are only allowing cubic polynomials and then when we
     /// are ending up with something that doesn't fit within those constraints because it is degree 6
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value)]
     fn dot_generic(
         self,
         other: Self,
@@ -293,13 +293,13 @@ where
         Some(x1x2 + y1y2)
     }
 
-    /// taking the pointwise cross product of two of TwoPolynomials gives a single polynomial
+    /// taking the pointwise cross product of two of `TwoPolynomials` gives a single polynomial
     /// implicitly it is proportional to the missing z-axis
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    /// like the P types in TwoPolynomials<T,P> are only allowing cubic polynomials and then when we
+    /// like the P types in `TwoPolynomials<T,P>` are only allowing cubic polynomials and then when we
     /// are ending up with something that doesn't fit within those constraints because it is degree 6
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value)]
     fn cross_generic(
         self,
         other: Self,
@@ -610,7 +610,7 @@ where
         })
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::many_single_char_names)]
     /// A B x
     /// C D y
     pub fn apply_matrix(self, two_d_matrix: [[T; 2]; 2]) -> Self
