@@ -17,10 +17,11 @@ use crate::{
 /// if we want alpha/beta=-1 as well, then we need to change this to 2
 const OFFSET: usize = 1;
 
-/// store the coefficients of J^{alpha,beta}_0,J^{alpha,beta}_1 ... in that order
+/// store the coefficients of `J^{alpha,beta}_0,J^{alpha,beta}_1` ... in that order
 /// up to N of them
 /// this provides an alternative basis for the vector space of polynomials
-/// alpha is restricted so that TWICE_ALPHA_PLUS_OFFSET is usize and same for beta
+/// alpha is restricted so that `TWICE_ALPHA_PLUS_OFFSET` is usize and same for beta
+#[allow(clippy::module_name_repetitions)]
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct JacobiBasisPolynomial<
@@ -67,6 +68,7 @@ where
             1 => Some(T::SQRT_PI * accumulator),
             2 => Some(accumulator),
             n => {
+                #[allow(clippy::cast_possible_truncation)]
                 let mut z = ((n as SmallIntegers) - 2).into();
                 z /= 2.into();
                 Self::gamma(n - 2, z)
@@ -81,7 +83,9 @@ where
     fn gamma_alpha_beta_one() -> (T, T, Option<T>) {
         let (mut floor_alpha_plus_beta_plus_1, extra_one_half) =
             Self::useful_alpha_beta_combinations();
+        #[allow(clippy::if_not_else)]
         let third_return = if !extra_one_half {
+            #[allow(clippy::cast_possible_truncation)]
             if floor_alpha_plus_beta_plus_1 == 0 {
                 None
             } else if floor_alpha_plus_beta_plus_1 == 1 {
@@ -163,6 +167,7 @@ where
         T: DivAssign<T> + From<SmallIntegers>,
     {
         let alpha_plus_one: T = {
+            #[allow(clippy::cast_possible_truncation)]
             let two_alpha: SmallIntegers = if TWICE_ALPHA_PLUS_OFFSET > OFFSET {
                 (TWICE_ALPHA_PLUS_OFFSET - OFFSET) as SmallIntegers
             } else {
@@ -174,6 +179,7 @@ where
             to_return
         };
         let beta_plus_one: T = {
+            #[allow(clippy::cast_possible_truncation)]
             let two_beta: SmallIntegers = if TWICE_BETA_PLUS_OFFSET > OFFSET {
                 (TWICE_BETA_PLUS_OFFSET - OFFSET) as SmallIntegers
             } else {
@@ -187,12 +193,14 @@ where
         let (floor_alpha_plus_beta_plus_1, extra_one_half) = Self::useful_alpha_beta_combinations();
         let alpha_beta_plus_one: T = {
             if extra_one_half {
+                #[allow(clippy::cast_possible_truncation)]
                 let mut to_return = (floor_alpha_plus_beta_plus_1 as SmallIntegers).into();
                 let mut one_half: T = 1.into();
                 one_half /= 2.into();
                 to_return += one_half;
                 to_return
             } else {
+                #[allow(clippy::cast_possible_truncation)]
                 (floor_alpha_plus_beta_plus_1 as SmallIntegers).into()
             }
         };
@@ -369,10 +377,11 @@ where
             .iter()
             .enumerate()
             .filter_map(|(power, coeff)| {
-                if !zero_pred(coeff) {
-                    Some(power as DegreeType)
-                } else {
+                if zero_pred(coeff) {
                     None
+                } else {
+                    #[allow(clippy::cast_possible_truncation)]
+                    Some(power as DegreeType)
                 }
             })
             .max()
@@ -392,6 +401,7 @@ where
         if my_degree == 2 {
             let mut one_poly = Self::create_monomial(1, &|z| *z == 0.into(), true)
                 .expect("creating 1 is no problem");
+            #[allow(clippy::cast_possible_truncation)]
             let derivative_constant: T = {
                 let twice_alpha_beta_offset = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
                 let mut alpha_plus_beta_plus_2 = (twice_alpha_beta_offset as SmallIntegers).into();
@@ -419,6 +429,7 @@ where
             return Some(Self::create_zero_poly());
         }
         let rhs_degree = rhs.polynomial_degree(zero_pred);
+        #[allow(clippy::match_same_arms)]
         match (my_degree, rhs_degree) {
             (None, None) => Some(Self::create_zero_poly()),
             (None, Some(_)) => Some(Self::create_zero_poly()),
@@ -444,6 +455,7 @@ where
         let mut answer = Vec::with_capacity(up_to as usize);
         for degree in 0..up_to {
             let coeffs: [T; N] = core::array::from_fn(|idx| {
+                #[allow(clippy::cast_possible_truncation)]
                 if (idx as DegreeType) == (degree as DegreeType) {
                     1.into()
                 } else {
@@ -629,9 +641,7 @@ where
         + SubAssign<T>,
 {
     fn add_assign(&mut self, rhs: T) {
-        if N == 0 {
-            panic!("The zero subspace");
-        }
+        assert!(N != 0, "The zero subspace");
         self.coeffs[0] += rhs;
     }
 }
@@ -679,9 +689,7 @@ where
         + SubAssign<T>,
 {
     fn sub_assign(&mut self, rhs: T) {
-        if N == 0 {
-            panic!("The zero subspace");
-        }
+        assert!(N != 0, "The zero subspace");
         self.coeffs[0] -= rhs;
     }
 }
@@ -841,7 +849,7 @@ where
         Ok(true)
     }
 
-    #[allow(unreachable_code)]
+    #[allow(unreachable_code, clippy::too_many_lines)]
     fn inner_product(&self, rhs: &Self) -> T {
         if N == 0 {
             return 0.into();
@@ -878,6 +886,7 @@ where
             Self::gamma_alpha_beta_one();
         let alpha_beta_one: T = alpha_beta_plus_one.clone();
 
+        #[allow(clippy::single_match_else)]
         let (
             mut gamma_n_alpha_beta_one,
             mut gamma_n_alpha_one,
@@ -922,6 +931,7 @@ where
             }
         };
 
+        #[allow(clippy::cast_possible_truncation, clippy::bool_to_int_with_if)]
         for (idx, (self_coeff, rhs_coeff)) in self
             .coeffs
             .iter()
@@ -964,18 +974,18 @@ where
 
 // alpha = beta = Galpha - 1/2
 // twice_alpha_plus_offset = 2*Galpha
-/// not normalized in the same way, coefficients of J^{Galpha-1/2,Galpha-1/2}_n (x) rather than C_n^{Galpha}(x)
+/// not normalized in the same way, coefficients of `J^{Galpha-1/2,Galpha-1/2}_n (x)` rather than `C_n^{Galpha}(x)`
 /// so all the coefficients will be changed by factors relating these two for each n
 #[allow(dead_code)]
 pub type GegenbauerBasisPolynomial<const N: usize, const TWICE_GALPHA: usize, T> =
     JacobiBasisPolynomial<N, TWICE_GALPHA, TWICE_GALPHA, T>;
 
-/// normalized in the same way, coefficients of J^{0,0}_n (x) = P_n(x)
+/// normalized in the same way, coefficients of `J^{0,0}_n (x) = P_n(x)`
 #[allow(dead_code)]
 pub type LegendreBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<N, 1, T>;
 
-/// not normalized in the same way, coefficients of J^{-1/2,-1/2}_n (x) rather than T_n(x)
-/// J^{-1/2,-1/2}_n (x) = Gamma(n+1/2)/(Sqrt[pi]*Gamma(n+1))*T_n(x)
+/// not normalized in the same way, coefficients of `J^{-1/2,-1/2}_n (x)` rather than `T_n(x)`
+/// `J^{-1/2,-1/2}_n (x) = Gamma(n+1/2)/(Sqrt[pi]*Gamma(n+1))*T_n(x)`
 /// so all the coefficients will be changed by these factors
 #[allow(dead_code)]
 pub type ChebyshevBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<N, 0, T>;

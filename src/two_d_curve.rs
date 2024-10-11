@@ -946,9 +946,7 @@ where
     where
         [(); 2 * SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound() + 2]:,
     {
-        if M > N {
-            panic!("The larger degree should be first");
-        }
+        assert!(M <= N, "The larger degree should be first");
         let other_upgraded_x = other
             .x
             .try_convert_degree::<{ N }>(zero_pred)

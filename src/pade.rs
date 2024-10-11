@@ -7,6 +7,7 @@ use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub};
 #[cfg(feature = "pade")]
 use std::marker::PhantomData;
 
+#[allow(clippy::module_name_repetitions)]
 #[cfg(feature = "pade")]
 pub struct PadeApproximant<T, P, Q>
 where
@@ -116,9 +117,8 @@ where
     #[allow(dead_code)]
     fn pade_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<(DegreeType, DegreeType)> {
         let den_degree = self.numerator_poly.polynomial_degree(zero_pred);
-        if den_degree.is_none() {
-            panic!("Denominator is 0");
-        }
+        assert!(den_degree.is_some(), "Denominator is 0");
+        
         let num_degree = self.numerator_poly.polynomial_degree(zero_pred);
         num_degree.map(|n| (n, den_degree.unwrap()))
     }

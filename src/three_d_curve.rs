@@ -922,7 +922,7 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::needless_pass_by_value)]
     /// given a parameterized curve in 3 space
     /// helper to find the values of the parameter where the
     /// tangent at that point is in the same direction
@@ -1050,9 +1050,7 @@ where
     where
         [(); 2 * SymmetricalBasisPolynomial::<N, T>::polynomial_degree_bound() + 2]:,
     {
-        if M > N {
-            panic!("The larger degree should be first");
-        }
+        assert!(M <= N, "The larger degree should be first");
         let other_upgraded_x = other
             .x
             .try_convert_degree::<{ N }>(zero_pred)
