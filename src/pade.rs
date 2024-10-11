@@ -118,7 +118,7 @@ where
     fn pade_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<(DegreeType, DegreeType)> {
         let den_degree = self.numerator_poly.polynomial_degree(zero_pred);
         assert!(den_degree.is_some(), "Denominator is 0");
-        
+
         let num_degree = self.numerator_poly.polynomial_degree(zero_pred);
         num_degree.map(|n| (n, den_degree.unwrap()))
     }
