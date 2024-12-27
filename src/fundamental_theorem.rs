@@ -97,7 +97,7 @@ where
         + Sub<Output = T>
         + DivAssign<T>,
 {
-    todo!();
+    todo!("solve a cubic polynomial with radicals");
 }
 
 #[allow(clippy::too_many_arguments, clippy::needless_pass_by_value)]
@@ -121,5 +121,5 @@ where
         + Sub<Output = T>
         + DivAssign<T>,
 {
-    todo!();
+    todo!("solve a quartic polynomial with radicals");
 }

@@ -58,7 +58,7 @@ where
     /// reason not just giving n+alpha is because that might be a half integer or negative
     /// but with the offset and multiplication, it is natural number
     fn binomial_helper(&self, _offset_plus_two_times_top: usize, _bottom: usize) -> T {
-        todo!();
+        todo!("binom(top,bottom) but top is not given directly");
     }
 
     /// Gamma(x)
@@ -101,7 +101,7 @@ where
                 Some(answer)
             }
         } else {
-            todo!();
+            todo!("there is an extra one half so sqrt pi is in there");
         };
         let first_return = Self::gamma(Self::two_alphabeta_plus_2(true), 1.into())
             .expect("alpha+1>0 so never doing Gamma(0) here");
@@ -112,7 +112,7 @@ where
 
     /// Gamma(alpha+beta+2)
     fn gamma_alpha_beta_two() -> T {
-        todo!();
+        todo!("Gamma function on alpha+beta+2");
     }
 
     // either 2*alpha+2 or 2*beta+2
@@ -264,7 +264,7 @@ where
         if (degree as usize) >= N {
             return Err(MonomialError::DesiredMonomialNotInSpace(degree));
         }
-        todo!();
+        todo!("create x^{degree}");
     }
 
     fn evaluate_at_many<const POINT_COUNT: usize>(
@@ -531,16 +531,16 @@ where
         match degree {
             Some(0) => Ok(vec![]),
             Some(1) => {
-                todo!()
+                todo!("to pull out constant term and linear term so can solve for zeros")
             }
             Some(2) => {
-                todo!()
+                todo!("to pull out 0,1,2 degree terms so can pass to quadratic_solve")
             }
             Some(3) => {
-                todo!()
+                todo!("to pull out 0,1,2,3 degree terms so can pass to cubic solve")
             }
             Some(4) => {
-                todo!()
+                todo!("to pull out 0,1,2,3,4 degree terms so can pass to quartic solve")
             }
             Some(x) if x > 4 => Err(FindZeroError::AbelRuffiniUnsolvability(x)),
             None => Err(FindZeroError::EverythingIsAZeroForZeroPolynomial),
@@ -862,23 +862,13 @@ where
             Self::more_useful_alpha_beta_combinations();
 
         let two_to_alpha_beta_one: T = {
+            let mut to_return: T = 1.into();
+            for _ in 1..floor_alpha_plus_beta_plus_1 {
+                to_return *= 2.into();
+            }
             if extra_one_half {
-                if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
-                    return (1 << floor_alpha_plus_beta_plus_1).into();
-                }
-                let mut to_return: T = 1.into();
-                for _ in 1..floor_alpha_plus_beta_plus_1 {
-                    to_return *= 2.into();
-                }
                 todo!("multiply to_return by another sqrt(2) as in type T");
             } else {
-                if floor_alpha_plus_beta_plus_1 < (SmallIntegers::BITS as usize) {
-                    return (1 << floor_alpha_plus_beta_plus_1).into();
-                }
-                let mut to_return = 1.into();
-                for _ in 1..floor_alpha_plus_beta_plus_1 {
-                    to_return *= 2.into();
-                }
                 to_return
             }
         };
