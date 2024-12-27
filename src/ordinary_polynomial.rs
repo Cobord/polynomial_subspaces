@@ -4,10 +4,12 @@
 /// can get rid of it after have tests that don't need it anymore
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use crate::fundamental_theorem::{
+    cubic_solve, quadratic_solve, quartic_solve, FindZeroError, FundamentalTheorem,
+};
 use crate::generic_polynomial::{
-    cubic_solve, quadratic_solve, quartic_solve, BasisIndexingType, DegreeType, DifferentiateError,
-    FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
-    SubspaceError,
+    BasisIndexingType, DegreeType, DifferentiateError, Generic1DPoly, MonomialError,
+    PointSpecifier, SmallIntegers, SubspaceError,
 };
 #[repr(transparent)]
 pub struct MonomialBasisPolynomial<T>
@@ -337,7 +339,7 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         my_sqrt: &impl Fn(&T) -> Option<T>,
         my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
-    ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
+    ) -> Result<Vec<(T, usize)>, crate::fundamental_theorem::FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
 
         match degree {

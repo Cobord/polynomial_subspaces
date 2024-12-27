@@ -4,10 +4,12 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::{
+    fundamental_theorem::{FindZeroError, FundamentalTheorem},
     generic_polynomial::{
-        BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
-        Generic1DPoly, InnerProductSubspace, MonomialError, SmallIntegers, SubspaceError,
+        BasisIndexingType, DegreeType, DifferentiateError, Generic1DPoly, MonomialError,
+        SmallIntegers, SubspaceError,
     },
+    inner_product::InnerProductSubspace,
     special_numbers::SpecialNumbers,
 };
 
@@ -524,7 +526,7 @@ where
         zero_pred: &impl Fn(&T) -> bool,
         _my_sqrt: &impl Fn(&T) -> Option<T>,
         _my_cube_root: &impl Fn(&T) -> (Option<T>, Option<T>),
-    ) -> Result<Vec<(T, usize)>, crate::generic_polynomial::FindZeroError> {
+    ) -> Result<Vec<(T, usize)>, FindZeroError> {
         let degree = self.polynomial_degree(zero_pred);
         match degree {
             Some(0) => Ok(vec![]),

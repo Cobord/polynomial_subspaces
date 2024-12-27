@@ -2,9 +2,9 @@ use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{marker::PhantomData, ops::DivAssign};
 
 use crate::{
+    fundamental_theorem::FundamentalTheorem,
     generic_polynomial::{
-        DifferentiateError, FundamentalTheorem, Generic1DPoly, MonomialError, PointSpecifier,
-        SmallIntegers,
+        DifferentiateError, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
     },
     two_d_curve::NormalTangentError,
 };
@@ -46,6 +46,10 @@ where
         + SubAssign<T>
         + PartialEq<T>,
 {
+    /// taking the pointwise norm of `ThreePolynomials` gives a single polynomial
+    /// the reason this returns an option instead of always succeeding is because in truncating product
+    /// we don't know if we have the space for all the coefficients we need
+    /// but we have expanded the space so that should not actually occur
     pub fn norm_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
@@ -83,6 +87,10 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
+    /// taking the pointwise dot product of two of `ThreePolynomials` gives a single polynomial
+    /// the reason this returns an option instead of always succeeding is because in truncating product
+    /// we don't know if we have the space for all the coefficients we need
+    /// but we have expanded the space so that should not actually occur
     pub fn dot_generic<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
@@ -152,6 +160,10 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
+    /// taking the pointwise cross product of two of `ThreePolynomials` gives another `ThreePolynomials`
+    /// the reason this returns an option instead of always succeeding is because in truncating product
+    /// we don't know if we have the space for all the coefficients we need
+    /// but we have expanded the space so that should not actually occur
     pub fn cross_generic<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
@@ -904,6 +916,10 @@ where
     /// tangent at that point is perpendicular to
     /// the displacement vector pointing between the given point
     /// and the curve
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
     pub fn normals_to_point(
         self,
         point: (T, T, T),
@@ -939,11 +955,16 @@ where
 
     #[allow(clippy::needless_pass_by_value)]
     /// given a parameterized curve in 3 space
-    /// helper to find the values of the parameter where the
+    /// find the values of the parameter where the
     /// tangent at that point is in the same direction
     /// as the displacement vector pointing between the given point
     /// and the curve
-    fn tangents_to_points(
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - cross product components were not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a norm squared was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
+    pub fn tangents_to_points(
         self,
         point: (T, T, T),
         zero_pred: &impl Fn(&T) -> bool,
@@ -1053,6 +1074,9 @@ where
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
+    /// # Errors
+    /// - a norm squared was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
     pub fn collision_curve<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
@@ -1092,13 +1116,17 @@ where
     }
 
     #[allow(clippy::type_complexity)]
-    /// for the curvature kappa, take the absolute value of the first output polynomial (in P)
+    /// for the curvature `kappa`, take the absolute value of the first output (in Self)
     /// then divide by the speed cubed
     /// the speed squared is the second output
     /// we can't do it purely within this level of generality with P
     /// because you can't take the square root
     /// nor can we divide
-    pub fn helper_curvature_times_speed_cubed_and_speed_squared(
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - cross product components were not in the subspace (which is avoided by the change const N array sizes using GADT)
+    pub fn signed_curvature_times_speed_cubed_and_speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Result<
@@ -1171,7 +1199,11 @@ where
         Ok((cross_product, speed_squared))
     }
 
-    fn speed_squared(
+    /// speed squared
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    pub fn speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Result<

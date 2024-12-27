@@ -1,10 +1,11 @@
 #![cfg_attr(feature = "GADT", feature(generic_const_exprs))]
 
-#[cfg(feature = "bezier")]
-use bezier_rs::Bezier;
-
 pub mod dense_ordinary_polynomial;
+pub mod fundamental_theorem;
 pub mod generic_polynomial;
+
+#[cfg(feature = "orthogonal")]
+pub mod inner_product;
 
 #[cfg(feature = "jacobi")]
 pub mod jacobi;
@@ -19,12 +20,13 @@ pub mod two_d_curve;
 pub mod pade;
 
 pub use dense_ordinary_polynomial::DenseMonomialBasisPolynomial;
-#[cfg(feature = "orthogonal")]
-pub use generic_polynomial::InnerProductSubspace;
+pub use fundamental_theorem::{FindZeroError, FundamentalTheorem};
 pub use generic_polynomial::{
-    BasisIndexingType, DegreeType, DifferentiateError, FindZeroError, FundamentalTheorem,
-    Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers, SubspaceError,
+    BasisIndexingType, DegreeType, DifferentiateError, Generic1DPoly, MonomialError,
+    PointSpecifier, SmallIntegers, SubspaceError,
 };
+#[cfg(feature = "orthogonal")]
+pub use inner_product::InnerProductSubspace;
 
 #[cfg(feature = "jacobi")]
 pub use jacobi::{

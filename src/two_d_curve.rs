@@ -4,18 +4,18 @@ use bezier_rs::Bezier;
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{marker::PhantomData, ops::DivAssign};
 
+use crate::fundamental_theorem::{FindZeroError, FundamentalTheorem};
 use crate::generic_polynomial::{
-    DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError,
-    PointSpecifier, SmallIntegers,
+    DifferentiateError, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
 };
-#[cfg(any(feature = "GADT", feature = "bezier"))]
 use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
 
 /// T is the type being used to represent the real numbers
 /// have two polynomials which can be used as functions from T to T
 /// so used for an R -> R^2 curve
-pub struct TwoPolynomials<T, P: Generic1DPoly<T>>
+pub struct TwoPolynomials<T, P>
 where
+    P: Generic1DPoly<T>,
     T: Clone
         + Neg<Output = T>
         + AddAssign
@@ -28,6 +28,29 @@ where
     x: P,
     y: P,
     dummy_t: PhantomData<T>,
+}
+
+impl<const N: usize, T> TwoPolynomials<T, SymmetricalBasisPolynomial<N, T>>
+where
+    T: Clone
+        + Neg<Output = T>
+        + AddAssign
+        + Add<Output = T>
+        + Mul<Output = T>
+        + MulAssign
+        + From<SmallIntegers>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + PartialEq,
+{
+    pub fn pretty_format(&self, variable: &str, zero_pred: &impl Fn(&T) -> bool) -> String
+    where
+        T: std::fmt::Debug,
+    {
+        let x_string = self.x.pretty_format(variable, zero_pred);
+        let y_string = self.y.pretty_format(variable, zero_pred);
+        format!(r#"x: {x_string}\ny: {y_string}"#)
+    }
 }
 
 /// Bezier curves go to two `SymmetricBasisPolynomial`'s where the real numbers are being used as f64

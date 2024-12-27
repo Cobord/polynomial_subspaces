@@ -1,14 +1,10 @@
-#[cfg(feature = "pade")]
 use crate::generic_polynomial::{
     DegreeType, DifferentiateError, Generic1DPoly, MonomialError, PointSpecifier, SmallIntegers,
 };
-#[cfg(feature = "pade")]
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub};
-#[cfg(feature = "pade")]
 use std::marker::PhantomData;
 
 #[allow(clippy::module_name_repetitions)]
-#[cfg(feature = "pade")]
 pub struct PadeApproximant<T, P, Q>
 where
     T: Clone
@@ -28,7 +24,6 @@ where
     dummy_t: PhantomData<T>,
 }
 
-#[cfg(feature = "pade")]
 impl<T, P, Q> PadeApproximant<T, P, Q>
 where
     T: Clone

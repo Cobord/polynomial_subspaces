@@ -1,9 +1,11 @@
 use core::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::{
+    fundamental_theorem::{
+        cubic_solve, quadratic_solve, quartic_solve, FindZeroError, FundamentalTheorem,
+    },
     generic_polynomial::{
-        cubic_solve, quadratic_solve, quartic_solve, BasisIndexingType, DegreeType,
-        DifferentiateError, FindZeroError, FundamentalTheorem, Generic1DPoly, MonomialError,
+        BasisIndexingType, DegreeType, DifferentiateError, Generic1DPoly, MonomialError,
         SmallIntegers, SubspaceError,
     },
     ordinary_polynomial::MonomialBasisPolynomial,
@@ -34,7 +36,8 @@ where
 {
     /// with only knowing the const generic N, we can constrain the polynomial degree
     /// as an upper bound, without worrying about if a coefficient was actually 0 or not
-    pub(crate) const fn polynomial_degree_bound() -> usize {
+    #[must_use]
+    pub const fn polynomial_degree_bound() -> usize {
         // 1 -> 1-t -> 1
         // 2 -> t,1-t -> 1
         // 3 -> t,1-t,(1-t)^2*t -> 3
@@ -396,12 +399,12 @@ where
         Ok(SymmetricalBasisPolynomial::<M, T> { coeffs })
     }
 
-    pub fn pretty_format(&self, variable: &str, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
+    pub fn pretty_format(&self, variable: &str, zero_pred: &impl Fn(&T) -> bool) -> String
     where
         T: std::fmt::Debug,
     {
         let answers: [String; N] = core::array::from_fn(|idx| {
-            if zero_pred.map_or(false, |f| f(&self.coeffs[idx])) {
+            if zero_pred(&self.coeffs[idx]) {
                 "0".to_string()
             } else {
                 let zeroth_part = format!("({:?})", self.coeffs[idx]);
@@ -1176,8 +1179,8 @@ mod test {
         };
         let expected: SymmetricalBasisPolynomial<6, f64> = one + t_to_one * (-4.) + t_squared * 3.;
         let diff_2 = SymmetricalBasisPolynomial::<6, f64>::differentiate_single(2);
-        let pretty_diff_2 = diff_2.pretty_format("t", Some(&|z: &f64| z.abs() < f64::EPSILON));
-        let pretty_expected = expected.pretty_format("t", Some(&|z: &f64| z.abs() < f64::EPSILON));
+        let pretty_diff_2 = diff_2.pretty_format("t", &|z: &f64| z.abs() < f64::EPSILON);
+        let pretty_expected = expected.pretty_format("t", &|z: &f64| z.abs() < f64::EPSILON);
         assert_eq!(pretty_expected, pretty_diff_2);
         assert_eq!(diff_2.coeffs, expected.coeffs);
         // derivative of t*s=t^2-t^3
@@ -1337,8 +1340,8 @@ mod test_more {
             } else {
                 let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
                 test_same_polynomial(
-                    in_ordinary,
-                    real_in_sym_basis,
+                    &in_ordinary,
+                    &real_in_sym_basis,
                     degree,
                     [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.],
                     &|&diff| (diff.abs() < TEST_EPSILON),
@@ -1378,8 +1381,8 @@ mod test_more {
                     .differentiate()
                     .expect("this can be differentiated without issue");
                 test_same_polynomial(
-                    in_ordinary,
-                    real_in_sym_basis,
+                    &in_ordinary,
+                    &real_in_sym_basis,
                     degree,
                     [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.],
                     &|&diff| (diff.abs() < TEST_EPSILON),
