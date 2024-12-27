@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 pub trait SpecialNumbers {
     const SQRT_TWO: Self;
     const PI: Self;

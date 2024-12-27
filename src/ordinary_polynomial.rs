@@ -37,7 +37,8 @@ where
         + Sub<Output = T>
         + SubAssign<T>,
 {
-    fn extract_coeff(&self, which: DegreeType) -> T {
+    #[must_use]
+    pub fn extract_coeff(&self, which: DegreeType) -> T {
         self.coeffs
             .iter()
             .filter_map(|(power, coeff)| {
@@ -48,6 +49,11 @@ where
                 }
             })
             .fold(Into::<T>::into(0), |acc, next| acc + next)
+    }
+
+    #[must_use]
+    pub fn coeffs_view(&self) -> &Vec<(DegreeType, T)> {
+        &self.coeffs
     }
 }
 
@@ -289,8 +295,8 @@ where
         + SubAssign<T>
         + DivAssign<T>,
 {
-    #[allow(dead_code)]
-    fn base_change<U>(self) -> MonomialBasisPolynomial<U>
+    #[must_use]
+    pub fn base_change<U>(self) -> MonomialBasisPolynomial<U>
     where
         U: Clone
             + Neg<Output = U>

@@ -6,12 +6,10 @@ pub type SmallIntegers = i8;
 
 pub enum FindZeroError {
     EverythingIsAZeroForZeroPolynomial,
-    #[allow(dead_code)]
     AbelRuffiniUnsolvability(DegreeType),
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum DifferentiateError {
     NotInTheSpace,
     CantComputeDerivative,
@@ -19,15 +17,12 @@ pub enum DifferentiateError {
 
 #[derive(Debug)]
 pub enum MonomialError {
-    #[allow(dead_code)]
     DesiredMonomialNotInSpace(DegreeType),
 }
 
 #[derive(Debug)]
 pub enum SubspaceError {
-    #[allow(dead_code)]
     NotStoredAsCoefficients,
-    #[allow(dead_code)]
     NoSuchBasisVector(BasisIndexingType),
 }
 
@@ -37,7 +32,6 @@ pub enum SubspaceError {
 // not have to use those copies, having to put clone
 // provides the painfulness to make aware of that happening
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub enum PointSpecifier<T> {
     NegOne,
@@ -79,8 +73,12 @@ where
         + From<SmallIntegers>
         + Sub<T, Output = T>,
 {
+    /// the zero polynomial as an element of the subspace
     fn create_zero_poly() -> Self;
 
+    /// create `x^n` as an element of `V \subseteq R[x]`
+    /// # Errors
+    /// the monomial we are trying to create might not be in the subspace of R[X] specified
     fn create_monomial(
         degree: DegreeType,
         zero_pred: &impl Fn(&T) -> bool,
@@ -89,9 +87,10 @@ where
 
     fn evaluate_at(&self, t: T) -> T;
 
+    /// evaluate the `self \in V \subseteq R[x]` at many values of x
     /// override this if there is repeated computation that is common to evaluate
     /// the polynomial at multiple points
-    #[allow(dead_code)]
+    /// the default implementation does them individually without reusing any work
     fn evaluate_at_many<const POINT_COUNT: usize>(
         &self,
         mut ts: [T; POINT_COUNT],
@@ -105,27 +104,35 @@ where
         ts
     }
 
+    // evaluate `self \in V \subseteq R[x]` at x=0
     /// override these because there is likely a better evaluation method for these special points
     fn evaluate_at_zero(&self) -> T {
         self.evaluate_at(0.into())
     }
+    // evaluate `self \in V \subseteq R[x]` at x=1
     /// override these because there is likely a better evaluation method for these special points
     fn evaluate_at_one(&self) -> T {
         self.evaluate_at(1.into())
     }
+    // evaluate `self \in V \subseteq R[x]` at x=-1
     /// override these because there is likely a better evaluation method for these special points
     fn evaluate_at_neg_one(&self) -> T {
         self.evaluate_at((-1).into())
     }
 
-    #[allow(dead_code)]
+    /// is this equal to the 0 polynomial
     fn is_zero_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
 
-    #[allow(dead_code)]
+    /// is it degree 0
     fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool;
 
+    /// what is the degree
+    /// None for the 0 polynomial to signify `- \infty`
     fn polynomial_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<DegreeType>;
 
+    /// attempt to differentiate this polynomial
+    /// # Errors
+    /// it might fail because the subspace does not have to be closed under `d/dx` operator
     fn differentiate(self) -> Result<Self, DifferentiateError>;
 
     /// take the product of these two polynomials
@@ -153,6 +160,8 @@ where
     /// see override in `ordinary_polynomial` for a case
     /// when can avoid the differentiation
     /// both avoiding that extra work and the potential source of error
+    /// # Errors
+    /// it might fail because the subspace does not have to be closed under `d/dx` operator
     fn linear_approx(self, around_here: PointSpecifier<T>) -> Result<(T, T), DifferentiateError> {
         let constant_term = match &around_here {
             PointSpecifier::NegOne => self.evaluate_at_neg_one(),
@@ -165,7 +174,12 @@ where
         Ok((constant_term, linear_term))
     }
 
-    #[allow(dead_code)]
+    /// first order approximation around the given point
+    /// # Errors
+    /// it might fail because the subspace does not have to be closed under `d/dx` operator
+    /// another possibility is that the subspace does not include the linear function `x`
+    ///     that should be very unusual, because we typically truncate
+    ///     by degree and 1 is too low of a degree to fall to the chopping block
     fn linear_approx_poly(
         self,
         around_here: PointSpecifier<T>,
@@ -173,9 +187,7 @@ where
         let (constant_term, linear_term) = self.linear_approx(around_here).map_err(Ok)?;
         let mut answer = Self::create_zero_poly();
         answer += constant_term;
-        // the subspace doesn't include the linear function x
-        // that should be very unusual, because we typically truncate
-        // by degree and that is too low of a degree to fall to the chopping block
+        // the subspace doesn't include the linear function x is the error below
         let mut linear_poly = Self::create_monomial(1, &|_| false, false).map_err(Err)?;
         linear_poly *= linear_term;
         Ok(answer + linear_poly)
@@ -183,14 +195,16 @@ where
 
     /// assuming there is some natural number indexed basis at work behind the scenes
     /// give the first `up_to` of them as long as they are all within this subspace
-    /// with the cutoff N being some larger natural number
+    /// # Errors
     /// this can fail when this implicit assumption does not hold in which case `NotStoredAsCoefficients`
     /// or the `up_to` being too large causing us to leave the subspace, `NoSuchBasisVector`
-    #[allow(dead_code)]
     fn all_basis_vectors(up_to: BasisIndexingType) -> Result<Vec<Self>, SubspaceError>;
 
-    /// with the same assumptions, set the coefficient of a particular basis polynomial
-    #[allow(dead_code)]
+    /// assuming there is some natural number indexed basis at work behind the scenes
+    /// set the coefficient of a particular basis polynomial
+    /// # Errors
+    /// this can fail when this implicit assumption does not hold in which case `NotStoredAsCoefficients`
+    /// or the `which_coeff` being too large causing us to leave the subspace, `NoSuchBasisVector`
     fn set_basis_vector_coeff(
         &mut self,
         which_coeff: BasisIndexingType,
@@ -210,16 +224,15 @@ where
         + Sub<Output = T>
         + DivAssign<T>,
 {
-    /// if the degree is small enough
-    /// or some other characterization that means
-    /// an exact solution could be done in radicals
-    /// by Galois considerations
-    /// then give those solutions that are within T without needing an extension
+    /// give those solutions that are within T without needing an extension
     /// `zero_pred` is there to determine if a T is 0 or not
     /// `my_sqrt` gives the square root if it existed within T without needing an extension
     /// `my_cube_root` gives a cube root if it existed within T without needing an extension
     ///     and if applicable a cube root of unity
-    #[allow(dead_code)]
+    /// # Errors
+    /// either it was the zero polynomial and everything is a zero not a small `Vec<(T, usize)>`
+    ///     for x-values and multiplicities
+    /// or the polynomial was not exactly solvable in radicals due to Galois considerations
     fn find_zeros(
         &self,
         zero_pred: &impl Fn(&T) -> bool,
@@ -240,17 +253,26 @@ where
         + From<SmallIntegers>
         + Sub<T, Output = T>,
 {
+    /// the subspace `V \subseteq R[x]` is closed under this provided `inner_product`
     fn inner_product(&self, rhs: &Self) -> T;
 
-    #[allow(dead_code)]
+    /// take the `inner_product` with `1*x^0`
+    /// # Errors
+    /// the subspace does not include the constant function `1*x^0`
+    ///     that should be very unusual, because we typically truncate
+    ///     by degree and 0 is too low of a degree to fall to the chopping block
     fn against_one(&self) -> Result<T, MonomialError> {
-        let one_poly = Self::create_monomial(1, &|_| false, false)?;
+        let one_poly = Self::create_monomial(0, &|_| false, false)?;
         Ok(self.inner_product(&one_poly))
     }
 
-    #[allow(dead_code)]
     /// if already know this, don't have to do this double checking
     /// and can just return Ok(true) immediately when overriding this
+    /// for this default implementation, assuming there is some natural number indexed
+    ///     basis at work behind the scenes so we can use `all_basis_vectors`
+    /// # Errors
+    /// this can fail when the implicit assumption does not hold in which case `NotStoredAsCoefficients`
+    /// or the `up_to` being too large causing us to leave the subspace, `NoSuchBasisVector`
     fn are_basis_vectors_orthogonal(
         up_to: BasisIndexingType,
         zero_pred: &impl Fn(&T) -> bool,
@@ -355,7 +377,11 @@ where
     todo!();
 }
 
-#[allow(dead_code, clippy::needless_pass_by_value)]
+/// # Panics
+/// if these two are not the same polynomial
+/// as measured by evaluating them both at several points
+/// and making sure they are within some `small_enough` tolerance
+#[allow(clippy::needless_pass_by_value)]
 pub fn test_same_polynomial<const N: usize, T, P, Q>(
     p: P,
     q: Q,

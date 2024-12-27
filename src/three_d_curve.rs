@@ -15,7 +15,6 @@ use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
 /// T is the type being used to represent the real numbers
 /// have three polynomials which can be used as functions from T to T
 /// so used for an R -> R^3 curve
-#[allow(dead_code)]
 pub struct ThreePolynomials<T, P: Generic1DPoly<T>>
 where
     T: Clone
@@ -47,8 +46,7 @@ where
         + SubAssign<T>
         + PartialEq<T>,
 {
-    #[allow(dead_code)]
-    fn norm_squared(
+    pub fn norm_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Option<
@@ -85,8 +83,7 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
-    #[allow(dead_code)]
-    fn dot_generic<const M: usize>(
+    pub fn dot_generic<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
         zero_pred: &impl Fn(&T) -> bool,
@@ -155,8 +152,7 @@ where
         Some(x1x2 + y1y2 + z1z2)
     }
 
-    #[allow(dead_code)]
-    fn cross_generic<const M: usize>(
+    pub fn cross_generic<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,
         zero_pred: &impl Fn(&T) -> bool,
@@ -263,7 +259,6 @@ where
     /// taking the pointwise norm of `ThreePolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    #[allow(dead_code)]
     fn norm_squared(self, zero_pred: &impl Fn(&T) -> bool, sure_will_cancel: bool) -> Option<P> {
         let x1x2 = self
             .x
@@ -280,7 +275,7 @@ where
     /// taking the pointwise dot product of two of `ThreePolynomials` gives a single polynomial
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    #[allow(dead_code, clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)]
     fn dot_generic(
         self,
         other: Self,
@@ -302,7 +297,7 @@ where
     /// taking the pointwise cross product of two of `ThreePolynomials` gives another `ThreePolynomials`
     /// the reason this returns an option instead of always succeeding is because in truncating product
     /// we don't know if we have the space for all the coefficients we need
-    #[allow(dead_code, clippy::needless_pass_by_value, clippy::similar_names)]
+    #[allow(clippy::needless_pass_by_value, clippy::similar_names)]
     fn cross_generic(
         self,
         other: Self,
@@ -579,7 +574,10 @@ where
         + SubAssign,
     P: Generic1DPoly<T>,
 {
-    #[allow(dead_code)]
+    /// differentiate each component
+    /// # Errors
+    /// it might fail because the subspace for the component polynomials
+    /// does not have to be closed under `d/dx` operator
     pub fn differentiate(self) -> Result<Self, DifferentiateError> {
         let x = self.x.differentiate()?;
         let y = self.y.differentiate()?;
@@ -592,7 +590,6 @@ where
         })
     }
 
-    #[allow(dead_code)]
     pub fn evaluate_at(&self, t: T) -> (T, T, T) {
         (
             self.x.evaluate_at(t.clone()),
@@ -601,7 +598,6 @@ where
         )
     }
 
-    #[allow(dead_code)]
     pub fn evaluate_at_many<const POINT_COUNT: usize>(
         &self,
         ts: [T; POINT_COUNT],
@@ -617,7 +613,6 @@ where
         triples
     }
 
-    #[allow(dead_code)]
     pub fn evaluate_at_zero(&self) -> (T, T, T) {
         (
             self.x.evaluate_at_zero(),
@@ -625,7 +620,7 @@ where
             self.z.evaluate_at_zero(),
         )
     }
-    #[allow(dead_code)]
+
     pub fn evaluate_at_one(&self) -> (T, T, T) {
         (
             self.x.evaluate_at_one(),
@@ -633,7 +628,7 @@ where
             self.z.evaluate_at_one(),
         )
     }
-    #[allow(dead_code)]
+
     pub fn evaluate_at_neg_one(&self) -> (T, T, T) {
         (
             self.x.evaluate_at_neg_one(),
@@ -642,14 +637,19 @@ where
         )
     }
 
-    #[allow(dead_code, clippy::needless_pass_by_value)]
+    /// first order approximation around the given point
+    /// # Errors
+    /// it might fail because the subspace for each component does not have to be closed under `d/dx` operator
+    /// another possibility is that the subspace does not include the linear function `x`
+    ///     that should be very unusual, because we typically truncate
+    ///     by degree and 1 is too low of a degree to fall to the chopping block
     pub fn linear_approx_poly(
         self,
         around_here: PointSpecifier<T>,
     ) -> Result<Self, Result<DifferentiateError, MonomialError>> {
         let x = self.x.linear_approx_poly(around_here.clone())?;
         let y = self.y.linear_approx_poly(around_here.clone())?;
-        let z = self.z.linear_approx_poly(around_here.clone())?;
+        let z = self.z.linear_approx_poly(around_here)?;
         Ok(Self {
             x,
             y,
@@ -658,7 +658,8 @@ where
         })
     }
 
-    #[allow(dead_code, clippy::many_single_char_names)]
+    #[must_use]
+    #[allow(clippy::many_single_char_names)]
     /// A B C x
     /// D E F y
     /// G H I z
@@ -717,12 +718,15 @@ where
         + DivAssign<T>,
     P: Generic1DPoly<T> + Clone + FundamentalTheorem<T>,
 {
-    #[allow(dead_code)]
     /// given a parameterized curve in 3 space
     /// find the values of the parameter where the
     /// tangent at that point is perpendicular to
     /// the displacement vector pointing between the given point
     /// and the curve
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace
+    /// - a polynomial was not exactly solvable
     pub fn normals_to_point(
         self,
         point: (T, T, T),
@@ -742,12 +746,16 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code)]
     /// given a parameterized curve in 3 space
     /// find the values of the parameter where the
     /// tangent at that point is in the same direction
     /// as the displacement vector pointing between the given point
     /// and the curve
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - cross product components were not in the subspace
+    /// - a norm squared was not in the subspace
+    /// - a polynomial was not exactly solvable
     pub fn tangents_to_points(
         self,
         point: (T, T, T),
@@ -770,10 +778,12 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code)]
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
+    /// # Errors
+    /// - a norm squared was not in the subspace
+    /// - a polynomial was not exactly solvable
     pub fn collision_curve(
         self,
         other: Self,
@@ -790,14 +800,17 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code)]
-    /// for the curvature kappa, take the absolute value of the first output (in Self)
+    /// for the curvature `kappa`, take the absolute value of the first output (in Self)
     /// then divide by the speed cubed
     /// the speed squared is the second output
     /// we can't do it purely within this level of generality with P
     /// because you can't take the square root
     /// nor can we divide
-    pub fn helper_curvature_times_speed_cubed_and_speed_squared(
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace
+    /// - cross product components were not in the subspace
+    pub fn signed_curvature_times_speed_cubed_and_speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Result<(Self, P), NormalTangentError> {
@@ -848,8 +861,11 @@ where
         Ok((cross_product, speed_squared))
     }
 
-    #[allow(dead_code)]
-    fn speed_squared(self, zero_pred: &impl Fn(&T) -> bool) -> Result<P, NormalTangentError> {
+    /// speed squared
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace
+    pub fn speed_squared(self, zero_pred: &impl Fn(&T) -> bool) -> Result<P, NormalTangentError> {
         let xprime = self
             .x
             .differentiate()
@@ -883,7 +899,6 @@ where
         + DivAssign<T>
         + PartialEq<T>,
 {
-    #[allow(dead_code)]
     /// given a parameterized curve in 3 space
     /// find the values of the parameter where the
     /// tangent at that point is perpendicular to
@@ -922,7 +937,7 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code, clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)]
     /// given a parameterized curve in 3 space
     /// helper to find the values of the parameter where the
     /// tangent at that point is in the same direction
@@ -969,7 +984,6 @@ where
         Ok(final_answer)
     }
 
-    #[allow(dead_code)]
     /// given a parameterized curve in 3 space
     /// helper to find the values of the parameter where the
     /// tangent at that point is in the same direction
@@ -1036,7 +1050,6 @@ where
         Ok((final_answer, displacement, tangent_vecs))
     }
 
-    #[allow(dead_code)]
     /// given two parameterized curves in 3 space
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
@@ -1078,7 +1091,7 @@ where
             .map_err(NormalTangentError::FindZeroError)
     }
 
-    #[allow(dead_code, clippy::type_complexity)]
+    #[allow(clippy::type_complexity)]
     /// for the curvature kappa, take the absolute value of the first output polynomial (in P)
     /// then divide by the speed cubed
     /// the speed squared is the second output
@@ -1158,7 +1171,6 @@ where
         Ok((cross_product, speed_squared))
     }
 
-    #[allow(dead_code)]
     fn speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,

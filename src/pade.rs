@@ -43,13 +43,12 @@ where
     P: Generic1DPoly<T>,
     Q: Generic1DPoly<T>,
 {
-    #[allow(dead_code)]
-    fn create_zero_pade() -> Self {
+    pub fn create_zero_pade() -> Self {
         let numerator_poly = P::create_zero_poly();
         Self::create_polynomial(numerator_poly)
     }
 
-    fn create_polynomial(numerator_poly: P) -> Self {
+    pub fn create_polynomial(numerator_poly: P) -> Self {
         let denominator_poly =
             Q::create_monomial(1, &|_| false, false).expect("The zero subspace for denominator");
         Self {
@@ -59,7 +58,7 @@ where
         }
     }
 
-    fn evaluate_at(&self, t: T, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
+    pub fn evaluate_at(&self, t: T, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
         let den = self.denominator_poly.evaluate_at(t.clone());
         if zero_pred(&den) {
             None
@@ -70,7 +69,7 @@ where
         }
     }
 
-    fn evaluate_at_zero(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
+    pub fn evaluate_at_zero(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
         let den = self.denominator_poly.evaluate_at_zero();
         if zero_pred(&den) {
             None
@@ -81,7 +80,7 @@ where
         }
     }
 
-    fn evaluate_at_one(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
+    pub fn evaluate_at_one(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
         let den = self.denominator_poly.evaluate_at_one();
         if zero_pred(&den) {
             None
@@ -92,7 +91,7 @@ where
         }
     }
 
-    fn evaluate_at_neg_one(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
+    pub fn evaluate_at_neg_one(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<T> {
         let den = self.denominator_poly.evaluate_at_neg_one();
         if zero_pred(&den) {
             None
@@ -103,19 +102,16 @@ where
         }
     }
 
-    #[allow(dead_code)]
-    fn is_zero_pade(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
+    pub fn is_zero_pade(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
         self.numerator_poly.is_zero_polynomial(zero_pred)
     }
 
-    #[allow(dead_code)]
-    fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
+    pub fn is_constant_polynomial(&self, zero_pred: &impl Fn(&T) -> bool) -> bool {
         self.numerator_poly.is_constant_polynomial(zero_pred)
             && self.denominator_poly.is_constant_polynomial(zero_pred)
     }
 
-    #[allow(dead_code)]
-    fn pade_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<(DegreeType, DegreeType)> {
+    pub fn pade_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<(DegreeType, DegreeType)> {
         let den_degree = self.numerator_poly.polynomial_degree(zero_pred);
         assert!(den_degree.is_some(), "Denominator is 0");
 
@@ -123,8 +119,7 @@ where
         num_degree.map(|n| (n, den_degree.unwrap()))
     }
 
-    #[allow(dead_code)]
-    fn evaluate_at_specifier(
+    pub fn evaluate_at_specifier(
         &self,
         around_here: PointSpecifier<T>,
         zero_pred: &impl Fn(&T) -> bool,
@@ -137,8 +132,7 @@ where
         }
     }
 
-    #[allow(dead_code)]
-    fn linear_approx_pade(
+    pub fn linear_approx_pade(
         self,
         around_here: PointSpecifier<T>,
         zero_pred: &impl Fn(&T) -> bool,

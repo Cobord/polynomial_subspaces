@@ -11,7 +11,6 @@ use crate::{
     special_numbers::SpecialNumbers,
 };
 
-#[allow(dead_code)]
 /// 2alpha+1 >= 0 so 2alpha>=-1, alpha>=-1/2
 /// and it is a half-integer
 /// if we want alpha/beta=-1 as well, then we need to change this to 2
@@ -207,8 +206,7 @@ where
         (alpha_plus_one, beta_plus_one, alpha_beta_plus_one)
     }
 
-    #[allow(dead_code)]
-    fn base_change<U>(
+    pub fn base_change<U>(
         self,
     ) -> JacobiBasisPolynomial<N, TWICE_ALPHA_PLUS_OFFSET, TWICE_BETA_PLUS_OFFSET, U>
     where
@@ -976,18 +974,15 @@ where
 // twice_alpha_plus_offset = 2*Galpha
 /// not normalized in the same way, coefficients of `J^{Galpha-1/2,Galpha-1/2}_n (x)` rather than `C_n^{Galpha}(x)`
 /// so all the coefficients will be changed by factors relating these two for each n
-#[allow(dead_code)]
 pub type GegenbauerBasisPolynomial<const N: usize, const TWICE_GALPHA: usize, T> =
     JacobiBasisPolynomial<N, TWICE_GALPHA, TWICE_GALPHA, T>;
 
 /// normalized in the same way, coefficients of `J^{0,0}_n (x) = P_n(x)`
-#[allow(dead_code)]
 pub type LegendreBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<N, 1, T>;
 
 /// not normalized in the same way, coefficients of `J^{-1/2,-1/2}_n (x)` rather than `T_n(x)`
 /// `J^{-1/2,-1/2}_n (x) = Gamma(n+1/2)/(Sqrt[pi]*Gamma(n+1))*T_n(x)`
 /// so all the coefficients will be changed by these factors
-#[allow(dead_code)]
 pub type ChebyshevBasisPolynomial<const N: usize, T> = GegenbauerBasisPolynomial<N, 0, T>;
 
 mod test {

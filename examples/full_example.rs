@@ -1,22 +1,9 @@
-#![cfg_attr(feature = "GADT", feature(generic_const_exprs))]
+use polynomial_subspaces::generic_polynomial::test_same_polynomial;
+use polynomial_subspaces::generic_polynomial::Generic1DPoly;
+use polynomial_subspaces::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
+use polynomial_subspaces::ordinary_polynomial::MonomialBasisPolynomial;
 
-#[cfg(feature = "bezier")]
-use bezier_rs::Bezier;
-
-mod dense_ordinary_polynomial;
-mod generic_polynomial;
-
-#[cfg(feature = "jacobi")]
-mod jacobi;
-mod special_numbers;
-
-mod my_symmetrical_basis_pair;
-mod ordinary_polynomial;
-mod three_d_curve;
-mod two_d_curve;
-
-#[cfg(feature = "pade")]
-mod pade;
+const TEST_EPSILON: f64 = 1e-15;
 
 fn main() {
     #[cfg(feature = "bezier")]
@@ -31,21 +18,16 @@ fn main() {
         println!("{:?}", z[1]);
     }
     {
-        const TEST_EPSILON: f64 = 1e-15;
-        use crate::generic_polynomial::test_same_polynomial;
-        use crate::generic_polynomial::Generic1DPoly;
-        use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
-        use crate::ordinary_polynomial::MonomialBasisPolynomial;
         let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         for degree in 0..10 {
             let in_ordinary =
                 MonomialBasisPolynomial::<f64>::create_monomial(degree, &zero_float, true)
                     .expect("No out of const size for these");
-            println!("{:?}", in_ordinary.coeffs);
+            println!("{:?}", in_ordinary.coeffs_view());
             let in_ordinary = in_ordinary
                 .differentiate()
                 .expect("this can be differentiated without issue");
-            println!("{:?}", in_ordinary.coeffs);
+            println!("{:?}", in_ordinary.coeffs_view());
             let in_sym_basis = SymmetricalBasisPolynomial::<6, f64>::create_monomial(
                 degree,
                 &zero_float,
@@ -56,12 +38,12 @@ fn main() {
             } else {
                 let real_in_sym_basis = in_sym_basis
                     .expect("For degrees <= 5, 6 symmetric basis coefficients are enough");
-                println!("function using sym {:?}", real_in_sym_basis.coeffs);
+                println!("function using sym {:?}", real_in_sym_basis.coeffs_view());
                 let real_in_sym_basis = real_in_sym_basis
                     .differentiate()
                     .expect("this can be differentiated without issue");
-                println!("derivative using ordinary {:?}", in_ordinary.coeffs);
-                println!("derivative using sym {:?}", real_in_sym_basis.coeffs);
+                println!("derivative using ordinary {:?}", in_ordinary.coeffs_view());
+                println!("derivative using sym {:?}", real_in_sym_basis.coeffs_view());
                 test_same_polynomial(
                     in_ordinary,
                     real_in_sym_basis,

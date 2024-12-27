@@ -46,6 +46,10 @@ where
         }
     }
 
+    pub fn coeffs_view(&self) -> &[T; N] {
+        &self.coeffs
+    }
+
     /// precompose with t <-> 1-t
     /// can fail if N is odd, because
     /// then the last coefficient should swap
@@ -63,8 +67,7 @@ where
     /// precompose with t <-> 1-t
     /// check if it would fail rather than panic
     /// that distinction can be done with compile time information
-    #[allow(dead_code)]
-    fn try_reverse(&mut self) -> bool {
+    pub fn try_reverse(&mut self) -> bool {
         if N % 2 == 0 {
             return false;
         }
@@ -358,11 +361,12 @@ where
         Some(answer)
     }
 
+    #[allow(clippy::result_unit_err)]
     /// change the degree by padding with extra 0's for a larger M
     /// or get rid of the 0's on the higher degree basis vectors to truncate to a smaller M
-    /// if we are trying to shrink the size, but those terms were not 0, then we get Err(())
-    #[allow(dead_code)]
-    pub(crate) fn try_convert_degree<const M: usize>(
+    /// # Errors
+    /// if we are trying to shrink the size, but those terms being discarded were not 0
+    pub fn try_convert_degree<const M: usize>(
         self,
         zero_pred: &impl Fn(&T) -> bool,
     ) -> Result<SymmetricalBasisPolynomial<M, T>, ()> {
@@ -392,8 +396,7 @@ where
         Ok(SymmetricalBasisPolynomial::<M, T> { coeffs })
     }
 
-    #[allow(dead_code)]
-    fn pretty_format(&self, variable: &str, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
+    pub fn pretty_format(&self, variable: &str, zero_pred: Option<&impl Fn(&T) -> bool>) -> String
     where
         T: std::fmt::Debug,
     {
@@ -685,8 +688,7 @@ where
         + SubAssign<T>
         + DivAssign<T>,
 {
-    #[allow(dead_code)]
-    fn base_change<U>(self) -> SymmetricalBasisPolynomial<N, U>
+    pub fn base_change<U>(self) -> SymmetricalBasisPolynomial<N, U>
     where
         U: Clone
             + Neg<Output = U>
