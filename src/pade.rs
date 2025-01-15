@@ -38,11 +38,14 @@ where
     P: Generic1DPoly<T>,
     Q: Generic1DPoly<T>,
 {
+    #[must_use]
     pub fn create_zero_pade() -> Self {
         let numerator_poly = P::create_zero_poly();
         Self::create_polynomial(numerator_poly)
     }
 
+    /// # Panics
+    /// does not panic because 1 is not the 0 polynomial but `create_monomial` does not know that
     pub fn create_polynomial(numerator_poly: P) -> Self {
         let denominator_poly =
             Q::create_monomial(1, &|_| false, false).expect("The zero subspace for denominator");
@@ -106,6 +109,8 @@ where
             && self.denominator_poly.is_constant_polynomial(zero_pred)
     }
 
+    /// # Panics
+    /// if the denominator is the zero polynomial
     pub fn pade_degree(&self, zero_pred: &impl Fn(&T) -> bool) -> Option<(DegreeType, DegreeType)> {
         let den_degree = self.numerator_poly.polynomial_degree(zero_pred);
         assert!(den_degree.is_some(), "Denominator is 0");
@@ -127,6 +132,13 @@ where
         }
     }
 
+    /// first order approximation around the given point
+    /// # Errors
+    /// it might fail because the subspace of numerator and denominator polynomials
+    /// does not have to be closed under `d/dx` operator
+    /// so building the approximation with quotient rule would fail when trying
+    /// to differentiate them at the specified point
+    /// it is also possible the denominator evaluates to 0 at that point
     pub fn linear_approx_pade(
         self,
         around_here: PointSpecifier<T>,

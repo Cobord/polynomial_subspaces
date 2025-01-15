@@ -894,6 +894,10 @@ where
     /// tangent at that point is perpendicular to
     /// the displacement vector pointing between the given point
     /// and the curve
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
     pub fn normals_to_point(
         self,
         point: (T, T),
@@ -932,6 +936,11 @@ where
     /// tangent at that point is in the same direction
     /// as the displacement vector pointing between the given point
     /// and the curve
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - cross product components were not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a norm squared was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
     pub fn tangents_to_points(
         self,
         point: (T, T),
@@ -968,6 +977,12 @@ where
     /// given two parameterized curves in the plane
     /// find the values of the parameter where the
     /// distance between the two curves becomes 0
+    /// # Errors
+    /// - a norm squared was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - a polynomial was not exactly solvable
+    /// # Panics
+    /// - conversion to higher degrees are fine, but `try_convert_degree` does not know that
+    /// - you have to give the higher degree one first
     pub fn collision_curve<const M: usize>(
         self,
         other: TwoPolynomials<T, SymmetricalBasisPolynomial<M, T>>,
@@ -1007,6 +1022,10 @@ where
     /// we can't do it purely within this level of generality with P
     /// because you can't take the square root
     /// nor can we divide
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
+    /// - cross product components were not in the subspace (which is avoided by the change const N array sizes using GADT)
     pub fn signed_curvature_times_speed_cubed_and_speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,
@@ -1067,6 +1086,10 @@ where
         Ok((cross_product, speed_squared))
     }
 
+    /// speed squared
+    /// # Errors
+    /// - one of the errors associated with `differentiate`
+    /// - a dot product was not in the subspace (which is avoided by the change const N array sizes using GADT)
     pub fn speed_squared(
         self,
         zero_pred: &impl Fn(&T) -> bool,

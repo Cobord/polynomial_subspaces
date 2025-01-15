@@ -849,7 +849,7 @@ where
         Ok(true)
     }
 
-    #[allow(unreachable_code, clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)]
     fn inner_product(&self, rhs: &Self) -> T {
         if N == 0 {
             return 0.into();
@@ -867,7 +867,8 @@ where
                 to_return *= 2.into();
             }
             if extra_one_half {
-                todo!("multiply to_return by another sqrt(2) as in type T");
+                to_return *= T::SQRT_TWO;
+                to_return
             } else {
                 to_return
             }

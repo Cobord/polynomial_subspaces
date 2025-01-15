@@ -1077,6 +1077,9 @@ where
     /// # Errors
     /// - a norm squared was not in the subspace (which is avoided by the change const N array sizes using GADT)
     /// - a polynomial was not exactly solvable
+    /// # Panics
+    /// - conversion to higher degrees are fine, but `try_convert_degree` does not know that
+    /// - you have to give the higher degree one first
     pub fn collision_curve<const M: usize>(
         self,
         other: ThreePolynomials<T, SymmetricalBasisPolynomial<M, T>>,

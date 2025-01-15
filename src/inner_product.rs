@@ -4,6 +4,7 @@ use crate::generic_polynomial::{
     BasisIndexingType, Generic1DPoly, MonomialError, SmallIntegers, SubspaceError,
 };
 
+#[allow(clippy::module_name_repetitions)]
 pub trait InnerProductSubspace<T>: Generic1DPoly<T>
 where
     T: Clone
