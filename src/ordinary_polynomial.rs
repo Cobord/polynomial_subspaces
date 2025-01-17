@@ -1,4 +1,3 @@
-/// TODO
 /// not packed tightly or guaranteeing sorting by degree
 /// only using for testing
 /// can get rid of it after have tests that don't need it anymore

@@ -21,12 +21,6 @@ pub enum SubspaceError {
     NoSuchBasisVector(BasisIndexingType),
 }
 
-// TODO
-// may make T Copy, but I like not having that at first
-// so I can make the arithmetic I am doing with it
-// not have to use those copies, having to put clone
-// provides the painfulness to make aware of that happening
-
 #[derive(Clone)]
 pub enum PointSpecifier<T> {
     NegOne,

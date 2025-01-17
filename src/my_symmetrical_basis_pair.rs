@@ -478,7 +478,6 @@ where
     }
 
     fn evaluate_at_many<const POINT_COUNT: usize>(&self, ts: [T; POINT_COUNT]) -> [T; POINT_COUNT] {
-        // TODO test this
         let s_values: [T; POINT_COUNT] =
             core::array::from_fn(|idx| ts[idx].clone() * (Into::<T>::into(1) - ts[idx].clone()));
         let mut cur_power_of_s: [T; POINT_COUNT] = core::array::from_fn(|_| 1.into());
@@ -1308,7 +1307,7 @@ mod test {
 }
 
 mod test_more {
-
+    
     // different order of computation so the errors for accurately running tests
     // could be larger than machine epsilon for f64
     // things like non-associativity building up over many steps
@@ -1387,6 +1386,38 @@ mod test_more {
                     [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.],
                     &|&diff| (diff.abs() < TEST_EPSILON),
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn evaluate_one_vs_more() {
+        use crate::generic_polynomial::{DegreeType, Generic1DPoly};
+        use crate::my_symmetrical_basis_pair::SymmetricalBasisPolynomial;
+        const HOW_MANY_SYM_BASIS: usize = 9;
+        const DEGREE_HANDLEABLE: DegreeType = 7;
+        const EXPECT_MESSAGE: &str = "For degrees <= 7, 9 symmetric basis coefficients are enough, can't do 8 without the 10th, once have 10th then can do 8 and 9";
+        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
+        const NUM_T_POINTS: usize = 7;
+        const T_POINTS: [f64; NUM_T_POINTS] = [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.];
+        for degree in 0..DEGREE_HANDLEABLE + 5 {
+            let in_sym_basis =
+                SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
+                    degree,
+                    &zero_float,
+                    degree <= DEGREE_HANDLEABLE,
+                );
+            if degree > DEGREE_HANDLEABLE {
+                assert!(in_sym_basis.is_err());
+            } else {
+                let real_in_sym_basis = in_sym_basis.expect(EXPECT_MESSAGE);
+                let from_point_by_point: [f64; NUM_T_POINTS] =
+                    core::array::from_fn(|idx| real_in_sym_basis.evaluate_at(T_POINTS[idx]));
+                let from_many = real_in_sym_basis.evaluate_at_many(T_POINTS);
+                for (a, b) in from_point_by_point.into_iter().zip(from_many) {
+                    let diff = a - b;
+                    assert!(zero_float(&diff));
+                }
             }
         }
     }
