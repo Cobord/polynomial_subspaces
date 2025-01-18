@@ -1307,7 +1307,7 @@ mod test {
 }
 
 mod test_more {
-    
+
     // different order of computation so the errors for accurately running tests
     // could be larger than machine epsilon for f64
     // things like non-associativity building up over many steps
@@ -1397,9 +1397,9 @@ mod test_more {
         const HOW_MANY_SYM_BASIS: usize = 9;
         const DEGREE_HANDLEABLE: DegreeType = 7;
         const EXPECT_MESSAGE: &str = "For degrees <= 7, 9 symmetric basis coefficients are enough, can't do 8 without the 10th, once have 10th then can do 8 and 9";
-        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         const NUM_T_POINTS: usize = 7;
         const T_POINTS: [f64; NUM_T_POINTS] = [0., 0.2, 0.3564, 0.5335, 0.789, 0.999, 1.];
+        let zero_float = |z: &f64| z.abs() < TEST_EPSILON;
         for degree in 0..DEGREE_HANDLEABLE + 5 {
             let in_sym_basis =
                 SymmetricalBasisPolynomial::<HOW_MANY_SYM_BASIS, f64>::create_monomial(
