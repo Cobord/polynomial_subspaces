@@ -110,9 +110,20 @@ where
         (first_return, second_return, third_return)
     }
 
-    /// Gamma(alpha+beta+2)
+    /// `Gamma(alpha+beta+2)`
+    /// the `into` and `gamma` prevent this from being const
+    /// but it should be thought of as such
     fn gamma_alpha_beta_two() -> T {
-        todo!("Gamma function on alpha+beta+2");
+        // 2*alpha + offset + 2*beta + offset = 2*(alpha+beta+offset)
+        let mut twice_quantity: usize = TWICE_ALPHA_PLUS_OFFSET + TWICE_BETA_PLUS_OFFSET;
+        if twice_quantity + 4 >= 2 * OFFSET {
+            twice_quantity += 4;
+            twice_quantity -= 2 * OFFSET;
+        } else {
+            panic!("2*(alpha+beta+2) is not a natural number");
+        }
+        Self::gamma(twice_quantity, 1.into())
+            .expect("because alpha,beta>=-1/2, alpha+beta+2 is greater than zero")
     }
 
     // either 2*alpha+2 or 2*beta+2

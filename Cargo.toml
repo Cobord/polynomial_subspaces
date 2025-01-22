@@ -10,12 +10,13 @@ repository = "https://github.com/Cobord/polynomial_subspaces"
 bezier-rs = {version="0.4.0",optional=true}
 glam = {version="0.28.0", optional=true}
 fast_polynomial = "0.1.0"
+lazy_static = {version="^1.5.0", optional=true}
 
 [features]
 GADT = []
 pade = []
 orthogonal = []
-jacobi = ["orthogonal"]
+jacobi = ["orthogonal", "dep:lazy_static"]
 bezier = ["dep:bezier-rs", "dep:glam"]
 all_stable = ["pade","bezier","jacobi"]
 all = ["GADT","all_stable"]
